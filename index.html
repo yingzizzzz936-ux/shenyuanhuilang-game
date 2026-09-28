@@ -194,6 +194,64 @@ body.room-court::after{content:'';position:fixed;top:0;left:50%;width:60%;height
 .small{font-size:13px;color:var(--text-dim)}.warn{color:var(--red)}.good{color:var(--green)}.gold{color:var(--gold)}.purple{color:var(--purple)}
 #toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--red);color:#fff;padding:13px 30px;border-radius:10px;z-index:999;opacity:0;transition:all .3s;font-size:14px;box-shadow:0 4px 20px rgba(231,76,60,0.4)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ========== 手机端适配 ========== */
+@media(max-width:768px){
+  #game{padding:12px 14px 100px;max-width:100%}
+  .game-title{font-size:42px;letter-spacing:10px;margin-bottom:4px}
+  .game-sub{font-size:13px;letter-spacing:6px;margin-bottom:24px}
+  .story-box{padding:20px 18px;font-size:14px;line-height:1.9;border-radius:12px}
+  .ending-text{padding:20px 18px;font-size:14px;line-height:1.9;border-radius:12px}
+  .ending h2{font-size:28px;margin-bottom:16px}
+  .btn{padding:15px 20px;font-size:15px;border-radius:10px;min-height:48px}
+  .btn.primary{padding:15px 24px}
+  .choice-list .btn{padding:16px 20px;font-size:15px;margin:8px 0}
+  .action-area{gap:8px;margin:18px 0}
+  .pw-input{width:100%;max-width:240px;font-size:22px;padding:14px 16px;letter-spacing:6px}
+  .pw-box label{font-size:14px}
+  #status-bar{flex-direction:column;gap:8px;padding:12px 16px;font-size:12px;align-items:flex-start}
+  #status-bar .actions{width:100%;justify-content:space-between;gap:8px}
+  #status-bar .actions span{padding:4px 0}
+  .clue-item{padding:14px 16px;margin-bottom:10px}
+  .clue-item h4{font-size:14px}
+  .clue-item p{font-size:13px;line-height:1.8}
+  .clue-title{padding:12px 16px;font-size:14px}
+  .clue-content{padding:12px 16px;font-size:13px;line-height:1.8}
+  .scene-card{padding:16px 18px;font-size:14px;line-height:1.9}
+  .broadcast{padding:14px 18px;font-size:14px;line-height:1.9}
+  .broadcast.red{padding:14px 18px}
+  .flashback{padding:18px 16px}
+  .flashback p{font-size:14px;line-height:1.9}
+  #toast{top:12px;padding:11px 20px;font-size:13px;max-width:90%;text-align:center}
+  .inv-label{padding:8px 12px;font-size:12px}
+  .room-name{font-size:13px}
+  .mt-20{margin-top:14px}
+  .mb-20{margin-bottom:14px}
+}
+@media(max-width:480px){
+  .game-title{font-size:34px;letter-spacing:8px}
+  .game-sub{font-size:12px;letter-spacing:4px;margin-bottom:20px}
+  .story-box{padding:16px 14px;font-size:13px;line-height:1.85}
+  .ending-text{padding:16px 14px;font-size:13px;line-height:1.85}
+  .btn{padding:14px 16px;font-size:14px;min-height:46px}
+  .btn.primary{padding:14px 18px}
+  .action-area .btn{flex:1;min-width:calc(50% - 4px)}
+  .pw-input{font-size:20px;letter-spacing:5px}
+  #status-bar{padding:10px 14px}
+  .scene-card{padding:14px 16px;font-size:13px;line-height:1.85}
+  .broadcast{padding:12px 16px;font-size:13px;line-height:1.85}
+}
+@media(max-height:500px) and (orientation:landscape){
+  #game{padding:10px 20px 80px}
+  .game-title{font-size:36px;letter-spacing:8px;margin-bottom:2px}
+  .game-sub{font-size:12px;margin-bottom:16px}
+  .story-box{padding:16px 20px;font-size:13px;line-height:1.8;max-width:100%}
+  .ending-text{padding:16px 20px;font-size:13px;line-height:1.8;max-width:100%}
+  .btn{padding:10px 18px;font-size:13px;min-height:40px}
+  .action-area{margin:12px 0;gap:6px}
+  .mt-20{margin-top:10px}
+  #status-bar{padding:8px 16px;font-size:11px}
+}
 </style>
 </head>
 <body>
