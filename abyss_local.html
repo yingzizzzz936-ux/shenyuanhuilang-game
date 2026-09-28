@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深渊回廊 · ABYSS CORRIDOR</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#e74c3c;--red-dim:#8b2e25;--green:#7ee787;--green-dim:#238636;
+  --gold:#daa520;--gold-dim:#8b6914;--blue:#58a6ff;--blue-dim:#1f6feb;
+  --purple:#bb86fc;--bg:#0a0a0c;--panel:rgba(12,12,18,0.88);
+  --border:rgba(255,255,255,0.12);--text:#d4d4d8;--text-dim:#71717a;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Microsoft YaHei",sans-serif;overflow-x:hidden;line-height:1.85}
+#bg-layer{position:fixed;top:0;left:0;width:100%;height:100%;background-size:cover;background-position:center;filter:brightness(0.45) saturate(0.85);transition:background 1.2s ease,filter 1.2s ease;z-index:0;transform:scale(1.05)}
+#bg-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,rgba(10,10,12,0.25) 0%,rgba(10,10,12,0.6) 100%);z-index:1;pointer-events:none}
+#scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);z-index:2;pointer-events:none;opacity:0.4;animation:scanMove 8s linear infinite}
+@keyframes scanMove{0%{background-position:0 0}100%{background-position:0 100px}}
+#vignette{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.55) 80%,rgba(0,0,0,0.85) 100%);z-index:3;pointer-events:none}
+#noise{position:fixed;top:0;left:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:0.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");animation:noiseShift 0.5s steps(4) infinite}
+@keyframes noiseShift{0%{transform:translate(0,0)}25%{transform:translate(-2%,1%)}50%{transform:translate(1%,-2%)}75%{transform:translate(-1%,2%)}100%{transform:translate(2%,-1%)}}
+#flicker{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0);z-index:5;pointer-events:none;transition:background 0.05s}
+#game{position:relative;z-index:10;max-width:980px;margin:0 auto;padding:20px 20px 110px;min-height:100vh}
+
+/* 特定房间视觉效果 */
+body.room-dark #bg-layer{filter:brightness(0.25) saturate(0.5)}
+body.room-dark::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(231,76,60,0.08) 0%,transparent 60%);animation:darkPulse 3s ease-in-out infinite;z-index:6;pointer-events:none}
+@keyframes darkPulse{0%,100%{opacity:0.3}50%{opacity:1}}
+
+body.room-morgue #bg-layer{filter:brightness(0.4) saturate(0.6) hue-rotate(180deg)}
+body.room-morgue::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,rgba(100,150,255,0.05) 0%,rgba(50,100,200,0.1) 100%);z-index:6;pointer-events:none;animation:frost 8s ease-in-out infinite}
+@keyframes frost{0%,100%{opacity:0.5}50%{opacity:1}}
+
+body.room-surgery #bg-layer{filter:brightness(0.4) saturate(0.7) hue-rotate(90deg)}
+body.room-surgery::after{content:'';position:fixed;top:0;left:0;width:100%;height:4px;background:rgba(0,255,100,0.6);z-index:6;pointer-events:none;animation:ecgLine 2s linear infinite}
+@keyframes ecgLine{0%{top:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+
+body.room-church::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,rgba(255,0,0,0.05) 0%,rgba(0,255,0,0.03) 33%,rgba(0,0,255,0.05) 66%,rgba(255,255,0,0.03) 100%);z-index:6;pointer-events:none;animation:stainedGlass 12s ease-in-out infinite}
+@keyframes stainedGlass{0%,100%{transform:translateX(0) scale(1)}50%{transform:translateX(30px) scale(1.1)}}
+
+body.room-choice #bg-layer{filter:brightness(0.35) saturate(1.2)}
+body.room-choice::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(231,76,60,0);z-index:6;pointer-events:none;animation:alarmFlash 1.5s ease-in-out infinite}
+@keyframes alarmFlash{0%,100%{background:rgba(231,76,60,0)}45%{background:rgba(231,76,60,0.08)}50%{background:rgba(231,76,60,0.15)}55%{background:rgba(231,76,60,0.08)}}
+
+body.room-phone::after{content:'';position:fixed;top:50%;left:50%;width:10px;height:10px;border:2px solid rgba(255,255,255,0.1);border-radius:50%;transform:translate(-50%,-50%);z-index:6;pointer-events:none;animation:phoneRipple 2s ease-out infinite}
+@keyframes phoneRipple{0%{width:10px;height:10px;opacity:0.8}100%{width:800px;height:800px;opacity:0}}
+
+body.room-library::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:radial-gradient(circle,rgba(255,220,150,0.15) 1px,transparent 1px);background-size:40px 40px;z-index:6;pointer-events:none;animation:dustFloat 20s linear infinite}
+@keyframes dustFloat{0%{background-position:0 0}100%{background-position:40px 40px}}
+
+body.room-court #bg-layer{filter:brightness(0.35) contrast(1.1)}
+body.room-court::after{content:'';position:fixed;top:0;left:50%;width:60%;height:100%;background:radial-gradient(ellipse at top,rgba(255,255,200,0.08) 0%,transparent 70%);transform:translateX(-50%);z-index:6;pointer-events:none;animation:spotlight 6s ease-in-out infinite}
+@keyframes spotlight{0%,100%{opacity:0.6}50%{opacity:1}}
+
+/* 文字故障特效 */
+.glitch-text{position:relative;display:inline-block}
+.glitch-text::before,.glitch-text::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden}
+.glitch-text::before{color:#ff0000;animation:glitch1 0.3s infinite;clip-path:inset(0 0 60% 0)}
+.glitch-text::after{color:#00ffff;animation:glitch2 0.3s infinite;clip-path:inset(60% 0 0 0)}
+@keyframes glitch1{0%{transform:translate(0)}20%{transform:translate(-3px,1px)}40%{transform:translate(3px,-1px)}60%{transform:translate(-2px,0)}80%{transform:translate(2px,1px)}100%{transform:translate(0)}}
+@keyframes glitch2{0%{transform:translate(0)}20%{transform:translate(3px,-1px)}40%{transform:translate(-3px,1px)}60%{transform:translate(2px,0)}80%{transform:translate(-2px,-1px)}100%{transform:translate(0)}}
+
+/* 顶部状态栏 */
+#status-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;margin-bottom:24px;background:var(--panel);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:12px;font-size:13px}
+#status-bar .room-name{color:var(--red);font-weight:700;letter-spacing:2px}
+#status-bar .ngp-badge{background:var(--purple);color:#000;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;margin-left:8px}
+#status-bar .actions{display:flex;gap:16px}
+#status-bar .actions span{cursor:pointer;color:var(--text-dim);transition:color .2s}
+#status-bar .actions span:hover{color:var(--red)}
+
+/* 房间 */
+.room{display:none;animation:roomIn .8s ease}
+.room.active{display:block}
+@keyframes roomIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* 场景描述 */
+.scene-card{background:var(--panel);backdrop-filter:blur(18px);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:0 14px 14px 0;padding:26px 30px;margin-bottom:24px;font-size:15px;line-height:2.1;animation:cardIn .6s ease}
+@keyframes cardIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+.scene-card .cursor{display:inline-block;width:2px;height:1em;background:var(--red);animation:blink .8s infinite;vertical-align:middle;margin-left:2px}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+
+/* 广播 */
+.broadcast{background:rgba(13,17,23,0.92);border:1px solid var(--green-dim);border-radius:12px;padding:20px 26px;margin:18px 0;color:var(--green);font-family:"Courier New",monospace;font-size:14px;line-height:1.95;animation:bIn .5s ease}
+.broadcast::before{content:"📡 广播";display:block;color:var(--green-dim);font-size:11px;letter-spacing:3px;margin-bottom:10px}
+@keyframes bIn{from{opacity:0;transform:scale(0.98)}to{opacity:1;transform:scale(1)}}
+.broadcast.red{border-color:var(--red-dim);color:var(--red)}
+.broadcast.red::before{color:var(--red-dim)}
+.broadcast.purple{border-color:var(--purple);color:var(--purple)}
+.broadcast.purple::before{color:var(--purple)}
+
+/* 线索 */
+.clue-card{background:rgba(26,21,0,0.88);border:1px solid var(--gold-dim);border-radius:12px;padding:20px 26px;margin:16px 0;color:var(--gold);font-size:14px;line-height:1.95;animation:cIn .5s ease}
+.clue-card::before{content:"📜 线索发现";display:block;color:var(--gold-dim);font-size:11px;letter-spacing:3px;margin-bottom:10px}
+@keyframes cIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* 内心独白 */
+.thought{background:rgba(30,20,40,0.7);border-left:3px solid var(--purple);padding:14px 22px;margin:14px 0;font-style:italic;color:var(--purple);font-size:14px;line-height:1.9;border-radius:0 8px 8px 0}
+.thought::before{content:"💭 ";font-style:normal}
+
+/* 按钮 */
+.action-area{margin:24px 0;display:flex;flex-wrap:wrap;gap:10px}
+.btn{background:rgba(30,30,42,0.9);color:var(--text);border:1px solid var(--border);padding:13px 24px;cursor:pointer;font-size:14px;border-radius:10px;transition:all .25s ease;font-family:inherit;backdrop-filter:blur(10px);position:relative;overflow:hidden}
+.btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);transition:left .5s ease}
+.btn:hover::before{left:100%}
+.btn:hover{background:rgba(231,76,60,0.15);border-color:var(--red);color:#fff;transform:translateY(-2px);box-shadow:0 4px 20px rgba(231,76,60,0.25),0 0 30px rgba(231,76,60,0.1)}
+.btn:active{transform:translateY(0) scale(0.97);box-shadow:0 2px 8px rgba(231,76,60,0.2)}
+.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn:disabled:hover{background:rgba(30,30,42,0.9);border-color:var(--border);color:var(--text)}
+.btn.danger{background:rgba(92,26,26,0.8);border-color:var(--red-dim);color:var(--red)}
+.btn.danger:hover{background:var(--red);color:#fff}
+.btn.primary{background:rgba(31,111,235,0.2);border-color:var(--blue-dim);color:var(--blue)}
+.btn.primary:hover{background:var(--blue);color:#fff}
+.btn.purple{background:rgba(187,134,252,0.15);border-color:var(--purple);color:var(--purple)}
+.btn.purple:hover{background:var(--purple);color:#000}
+
+.choice-list{margin:20px 0}
+.choice-list .btn{display:block;width:100%;text-align:left;padding:16px 26px;margin:10px 0;font-size:15px}
+
+/* 密码 */
+.pw-box{text-align:center;margin:24px 0;padding:28px;background:var(--panel);border:1px solid var(--border);border-radius:14px;backdrop-filter:blur(14px)}
+.pw-box label{display:block;margin-bottom:16px;color:var(--text-dim);font-size:14px}
+.pw-input{background:#000;color:var(--green);border:1px solid var(--green-dim);padding:14px 18px;font-size:24px;width:200px;text-align:center;letter-spacing:8px;border-radius:10px;font-family:"Courier New",monospace;outline:none;transition:border-color .2s}
+.pw-input:focus{border-color:var(--green);box-shadow:0 0 16px rgba(126,231,135,0.2)}
+
+/* 倒计时 */
+.cd-display{text-align:center;margin:20px 0;font-family:"Courier New",monospace;font-size:56px;font-weight:bold;color:var(--red);text-shadow:0 0 30px rgba(231,76,60,0.5);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.65}}
+
+/* 道具栏 */
+#inv-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(8,8,12,0.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:12px 20px;display:flex;justify-content:center;align-items:center;gap:10px;min-height:66px}
+.inv-label{color:var(--text-dim);font-size:12px;margin-right:10px;letter-spacing:2px}
+.inv-slot{width:44px;height:44px;border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;position:relative;background:rgba(30,30,42,0.8);transition:all .2s}
+.inv-slot:hover{border-color:var(--red);background:rgba(231,76,60,0.1);transform:translateY(-3px)}
+.inv-slot .tip{display:none;position:absolute;bottom:54px;left:50%;transform:translateX(-50%);background:#1a1a26;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;white-space:normal;width:240px;z-index:200;border:1px solid var(--border);line-height:1.6;text-align:left}
+.inv-slot:hover .tip{display:block}
+
+/* 开始界面 */
+#start-screen{text-align:center;padding:50px 20px 30px}
+.game-title{font-size:76px;font-weight:900;color:var(--red);letter-spacing:18px;margin-bottom:6px;text-shadow:0 0 40px rgba(231,76,60,0.4),0 0 80px rgba(231,76,60,0.2);animation:tGlow 3s ease-in-out infinite}
+@keyframes tGlow{0%,100%{text-shadow:0 0 40px rgba(231,76,60,0.4)}50%{text-shadow:0 0 70px rgba(231,76,60,0.7),0 0 110px rgba(231,76,60,0.3)}}
+.game-sub{color:var(--text-dim);font-size:16px;letter-spacing:10px;margin-bottom:44px}
+.story-box{max-width:640px;margin:0 auto 36px;text-align:left;background:var(--panel);backdrop-filter:blur(18px);border:1px solid var(--border);border-radius:16px;padding:34px;font-size:15px;line-height:2.15}
+.story-box .sms{color:var(--red);text-align:center;margin:18px 0;font-style:italic;padding:14px;background:rgba(231,76,60,0.08);border-radius:10px;font-size:16px}
+.start-btn{font-size:19px;padding:18px 64px;letter-spacing:6px;background:linear-gradient(135deg,var(--red-dim),var(--red));color:#fff;border:none;border-radius:12px;cursor:pointer;transition:all .3s;font-family:inherit;box-shadow:0 4px 24px rgba(231,76,60,0.35)}
+.start-btn:hover{transform:translateY(-3px);box-shadow:0 8px 36px rgba(231,76,60,0.55)}
+.ngp-btn{font-size:16px;padding:14px 48px;letter-spacing:4px;background:linear-gradient(135deg,#6a3fb0,var(--purple));color:#fff;border:none;border-radius:12px;cursor:pointer;transition:all .3s;font-family:inherit;margin-top:12px;box-shadow:0 4px 20px rgba(187,134,252,0.3)}
+.ngp-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(187,134,252,0.5)}
+
+/* 结局 */
+.ending{text-align:center;padding:36px 20px}
+.ending h2{font-size:42px;color:var(--red);letter-spacing:10px;margin-bottom:28px;text-shadow:0 0 30px rgba(231,76,60,0.4)}
+.ending h2.purple{color:var(--purple);text-shadow:0 0 30px rgba(187,134,252,0.4)}
+.ending-text{max-width:720px;margin:0 auto;text-align:left;background:var(--panel);backdrop-filter:blur(18px);border:1px solid var(--border);border-radius:16px;padding:34px;font-size:15px;line-height:2.15}
+.ending-text p{margin-bottom:14px}
+.ending-quote{text-align:center;color:var(--gold);font-style:italic;margin-top:28px;padding-top:22px;border-top:1px solid var(--border);font-size:16px;letter-spacing:2px}
+
+/* 邮件 */
+.email-list{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:16px 0;backdrop-filter:blur(14px)}
+.email-item{padding:16px 22px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s;display:flex;justify-content:space-between;align-items:center}
+.email-item:hover{background:rgba(231,76,60,0.08)}
+.email-item:last-child{border-bottom:none}
+.email-item .sender{font-weight:700;color:var(--blue)}
+.email-item .subject{color:var(--text-dim);font-size:13px;margin-left:12px}
+.email-item .unread{color:var(--red);font-size:11px;background:rgba(231,76,60,0.15);padding:3px 10px;border-radius:5px}
+.email-body{background:rgba(0,0,0,0.4);padding:22px;border-radius:0 0 12px 12px;display:none;font-size:14px;line-height:2;white-space:pre-line}
+.email-body.show{display:block}
+
+/* 日记 */
+.diary-page{background:rgba(40,30,20,0.85);border:1px solid var(--gold-dim);border-radius:8px;padding:22px 28px;margin:14px 0;font-family:"KaiTi","楷体",serif;font-size:15px;line-height:2.1;color:#d4c4a0}
+.diary-page .date{color:var(--gold);font-size:13px;margin-bottom:10px;display:block}
+
+/* 线索面板 */
+.clue-item{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:18px 24px;margin-bottom:14px;backdrop-filter:blur(14px)}
+.clue-item h4{color:var(--gold);margin-bottom:8px;font-size:15px}
+.clue-item p{color:var(--text);font-size:14px;line-height:1.85}
+.clue-accordion{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;margin-bottom:12px;overflow:hidden;backdrop-filter:blur(14px);transition:all .3s}
+.clue-accordion:hover{border-left-color:var(--gold-light);box-shadow:0 0 12px rgba(200,170,80,0.15)}
+.clue-title{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;user-select:none;transition:background .2s}
+.clue-title:hover{background:rgba(200,170,80,0.08)}
+.clue-icon{font-size:18px}
+.clue-name{flex:1;color:var(--gold);font-size:15px;font-weight:600}
+.clue-arrow{color:var(--gold-dim);font-size:12px;transition:transform .3s}
+.clue-detail{padding:0 20px 18px 50px;color:var(--text);font-size:14px;line-height:1.9;border-top:1px solid rgba(200,170,80,0.15);padding-top:14px;margin-top:0;animation:cIn .3s ease}
+
+/* 闪回 */
+.flashback{background:rgba(20,10,30,0.9);border:1px solid var(--purple);border-radius:14px;padding:28px;margin:18px 0;animation:fbIn 1s ease}
+@keyframes fbIn{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:blur(0)}}
+.flashback .fb-label{color:var(--purple);font-size:12px;letter-spacing:4px;margin-bottom:14px;text-align:center}
+
+/* 工具 */
+.hidden{display:none!important}.center{text-align:center}.mt-20{margin-top:20px}.mb-20{margin-bottom:20px}
+.small{font-size:13px;color:var(--text-dim)}.warn{color:var(--red)}.good{color:var(--green)}.gold{color:var(--gold)}.purple{color:var(--purple)}
+#toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--red);color:#fff;padding:13px 30px;border-radius:10px;z-index:999;opacity:0;transition:all .3s;font-size:14px;box-shadow:0 4px 20px rgba(231,76,60,0.4)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="bg-layer"></div><div id="bg-overlay"></div><div id="scanlines"></div><div id="vignette"></div><div id="noise"></div><div id="flicker"></div><div id="toast"></div>
+<div id="game">
+<div id="status-bar">
+  <span><span class="room-name" id="room-indicator">深渊回廊</span><span class="ngp-badge hidden" id="ngp-badge">二周目</span></span>
+  <div class="actions">
+    <span id="mute-btn" onclick="toggleMute()">🔊 音效</span>
+    <span onclick="showClues()">📋 线索 (<span id="clue-count">0</span>)</span>
+    <span onclick="saveGame()">💾 保存</span>
+    <span onclick="if(confirm('确定重新开始？')){try{localStorage.removeItem('abyss_v3')}catch(e){}location.reload()}">🔄 重开</span>
+  </div>
+</div>
+
+<!-- 开始界面 -->
+<div id="start-screen" class="room active">
+  <div class="game-title">深渊回廊</div>
+  <div class="game-sub">ABYSS CORRIDOR</div>
+  <div class="story-box">
+    <p>近一年，城市里陆续有年轻人失踪。</p>
+    <p>他们的共同点是——都去过一家叫"深渊回廊"的地下密室逃脱。</p>
+    <p>警方调查无果，密室老板称"客人玩完就走了"。</p>
+    <p>你的好友林夏三个月前进去后再也没出来。</p>
+    <p>今天，你收到了一条从她手机发来的短信：</p>
+    <div class="sms">"别进来。第三间房的画是假的。"</div>
+    <p>你还是推开了那扇铁门。</p>
+  </div>
+  <button class="start-btn" onclick="startGame(false)">推 开 铁 门</button>
+  <div class="mt-20" id="continue-area"></div>
+  <div id="ngp-area" class="hidden"></div>
+</div>
+
+<!-- 序章 -->
+<div id="room-intro" class="room"><div class="scene-card" id="intro-scene"></div>
+  <div class="action-area"><button class="btn" onclick="readRules()">查看《玩家须知》</button><button class="btn" onclick="readNotebook()">翻开笔记本</button><button class="btn" onclick="checkAshtray()">检查烟灰缸</button><button class="btn" onclick="intro_lookAround()">环顾四周</button></div>
+  <div id="intro-content"></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="intro-next" onclick="goTo('room1')">走向裂开的门缝 →</button></div>
+</div>
+
+<!-- 第一关 -->
+<div id="room1" class="room"><div class="scene-card" id="r1-scene"></div>
+  <div class="action-area"><button class="btn" onclick="r1_takeKey()">拿起台座上的钥匙</button><button class="btn" onclick="r1_mirrors()">观察四面镜子</button></div>
+  <div id="r1-content"></div>
+  <div class="pw-box hidden" id="r1-pwbox"><label>暗格中的6位数字密码锁</label><input type="text" class="pw-input" id="r1-pw" maxlength="6"><div class="mt-20"><button class="btn primary" onclick="r1_submit()">确认</button></div></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="r1-next" onclick="goTo('room2')">进入下一个房间 →</button></div>
+</div>
+
+<!-- 第二关 -->
+<div id="room2" class="room"><div class="scene-card" id="r2-scene"></div>
+  <div class="action-area"><button class="btn" onclick="r2_radio()">打开收音机</button><button class="btn" onclick="r2_press('trust')">按下「信任」</button><button class="btn" onclick="r2_press('doubt')">按下「怀疑」</button><button class="btn danger" onclick="r2_press('obey')">按下「服从」</button><button class="btn" onclick="r2_press('resist')">按下「反抗」</button><button class="btn primary" onclick="r2_wait()">什么都不做，静静等待</button></div>
+  <div id="r2-content"></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="r2-next" onclick="goTo('elevator')">门开了，走进去 →</button></div>
+</div>
+
+<!-- 电梯（新增） -->
+<div id="elevator" class="room"><div class="scene-card" id="elev-scene"></div>
+  <div class="action-area"><button class="btn" onclick="elev_buttons()">查看楼层按钮</button><button class="btn" onclick="elev_mirror()">看电梯里的镜子</button><button class="btn" onclick="elev_ad()">看墙上的广告</button></div>
+  <div id="elev-content"></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="elev-next" onclick="goTo('timeroom')">电梯到达，走出去 →</button></div>
+</div>
+
+<!-- 时间房间 -->
+<div id="timeroom" class="room"><div class="scene-card" id="time-scene"></div>
+  <div class="action-area"><button class="btn" onclick="time_clocks()">观察墙上的钟表</button><button class="btn" onclick="time_cabinet()">检查角落的铁皮柜</button></div>
+  <div id="time-content"></div>
+  <div class="pw-box hidden" id="time-pwbox"><label>输入倒走钟表停止时指向的时间（4位）</label><input type="text" class="pw-input" id="time-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="time_submit()">确认</button></div></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="time-next" onclick="goTo('room3')">进入下一个房间 →</button></div>
+</div>
+
+<!-- 第三关 -->
+<div id="room3" class="room"><div class="scene-card" id="r3-scene"></div>
+  <div class="action-area"><button class="btn" onclick="r3_painting('lastsupper')">检查《最后的晚餐》</button><button class="btn" onclick="r3_painting('scream')">检查《呐喊》</button><button class="btn" onclick="r3_painting('starrynight')">检查《星月夜》</button><button class="btn" onclick="r3_painting('memory')">检查《记忆的永恒》</button><button class="btn hidden" id="r3-clock-btn" onclick="r3_takeClock()">取下画里的软钟</button><button class="btn hidden" id="r3-drawer-btn" onclick="r3_drawer()">用钥匙打开画后抽屉</button><button class="btn hidden" id="r3-place-btn" onclick="r3_place()">把软钟放到中央底座</button></div>
+  <div id="r3-content"></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="r3-next" onclick="goTo('textroom')">进入下一个房间 →</button></div>
+</div>
+
+<!-- 文字房间 -->
+<div id="textroom" class="room"><div class="scene-card" id="text-scene"></div>
+  <div class="action-area"><button class="btn" onclick="text_red()">寻找红色的字</button><button class="btn hidden" id="text-rec-btn" onclick="text_recorder()">使用录音笔</button></div>
+  <div id="text-content"></div>
+  <div class="pw-box hidden" id="text-pwbox"><label>保险柜4位密码</label><input type="text" class="pw-input" id="text-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="text_submit()">确认</button></div><p class="small mt-20" id="text-attempts"></p></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="text-next" onclick="goTo('emailroom')">进入下一个房间 →</button></div>
+</div>
+
+<!-- 邮件房间 -->
+<div id="emailroom" class="room"><div class="scene-card" id="email-scene"></div>
+  <div class="email-list" id="email-list">
+    <div class="email-item" onclick="email_open(0)"><div><span class="sender">系统通知</span><span class="subject">—— 欢迎使用深渊内部邮件系统</span></div><span class="unread">未读</span></div>
+    <div class="email-body" id="email-0"></div>
+    <div class="email-item" onclick="email_open(1)"><div><span class="sender">张医生</span><span class="subject">—— 关于007号实验体的最新评估</span></div><span class="unread">未读</span></div>
+    <div class="email-body" id="email-1"></div>
+    <div class="email-item" onclick="email_open(2)"><div><span class="sender">林夏</span><span class="subject">—— 如果你看到这封邮件，说明我失败了</span></div><span class="unread">未读</span></div>
+    <div class="email-body" id="email-2"></div>
+    <div class="email-item" onclick="email_open(3)"><div><span class="sender">管理员</span><span class="subject">—— 档案室门禁密码已更新</span></div><span class="unread">未读</span></div>
+    <div class="email-body" id="email-3"></div>
+    <div class="email-item hidden" id="email-4-item" onclick="email_open(4)"><div><span class="sender">???</span><span class="subject">—— 给姐姐的最后一封信</span></div><span class="unread">未读</span></div>
+    <div class="email-body" id="email-4"></div>
+  </div>
+  <div id="email-content"></div>
+  <div class="pw-box hidden" id="email-pwbox"><label>电脑旁的抽屉需要4位密码</label><input type="text" class="pw-input" id="email-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="email_submit()">确认</button></div></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="email-next" onclick="goTo('confessional')">进入下一个房间 →</button></div>
+</div>
+
+<!-- 告解室（宗教关卡） -->
+<div id="confessional" class="room"><div class="scene-card" id="conf-scene"></div>
+  <div class="action-area">
+    <button class="btn" onclick="conf_cross()">查看十字架</button>
+    <button class="btn" onclick="conf_bible()">查看圣经</button>
+    <button class="btn" onclick="conf_kneel()">查看跪凳</button>
+    <button class="btn hidden" id="conf-painting-btn" onclick="conf_painting()">查看墙上的画</button>
+  </div>
+  <div id="conf-content"></div>
+  <div class="pw-box hidden" id="conf-pwbox1"><label>跪凳下的密码锁（4位）—— 提示："叩门，就给你们开门"是第几节？</label><input type="text" class="pw-input" id="conf-pw1" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="conf_submit1()">确认</button></div><p class="small mt-20">提示：去搜索"马太福音 第7章 叩门就给你们开门"</p></div>
+  <div class="pw-box hidden" id="conf-pwbox2"><label>画后的密码锁（4位）—— 提示：圣经中最短的一节经文"耶稣哭了"，章+节</label><input type="text" class="pw-input" id="conf-pw2" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="conf_submit2()">确认</button></div><p class="small mt-20">提示：去搜索"圣经中最短的一节经文 耶稣哭了"</p></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="conf-next" onclick="goTo('library')">离开告解室 →</button></div>
+</div>
+
+<!-- 图书馆（宗教/哲学关卡） -->
+<div id="library" class="room"><div class="scene-card" id="lib-scene"></div>
+  <div class="action-area">
+    <button class="btn" onclick="lib_shelves()">浏览书架</button>
+    <button class="btn" onclick="lib_desk()">查看书桌</button>
+    <button class="btn hidden" id="lib-bible-btn" onclick="lib_bible()">查阅圣经</button>
+    <button class="btn hidden" id="lib-philo-btn" onclick="lib_philo()">查阅哲学著作</button>
+  </div>
+  <div id="lib-content"></div>
+  <div class="pw-box hidden" id="lib-pwbox"><label>书桌抽屉密码锁（4位）—— 提示："伸冤在我，我必报应"，这是罗马书第几章第几节？章+节</label><input type="text" class="pw-input" id="lib-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="lib_submit()">确认</button></div><p class="small mt-20">提示：去搜索"伸冤在我 我必报应 罗马书 第几章第几节"</p></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="lib-next" onclick="goTo('courtroom')">进入下一个房间 →</button></div>
+</div>
+
+<!-- 审判庭（道德选择关卡） -->
+<div id="courtroom" class="room"><div class="scene-card" id="court-scene"></div>
+  <div class="action-area">
+    <button class="btn" onclick="court_judge()">走向法官席</button>
+    <button class="btn" onclick="court_defendant()">走向被告席</button>
+    <button class="btn" onclick="court_audience()">旁听席坐下</button>
+  </div>
+  <div id="court-content"></div>
+  <div class="center mt-20">
+    <button class="btn hidden" id="court-choice1" onclick="court_choice('guilty')">他们有罪，应该受到惩罚</button>
+    <button class="btn hidden" id="court-choice2" onclick="court_choice('notguilty')">他们有错，但罪不至死</button>
+    <button class="btn hidden" id="court-choice3" onclick="court_choice('same')">如果是我，我也可能见死不救</button>
+  </div>
+  <div class="center mt-20"><button class="btn primary hidden" id="court-next" onclick="goTo('room4')">离开审判庭 →</button></div>
+</div>
+
+<!-- 第四关 -->
+<div id="room4" class="room"><div class="scene-card" id="r4-scene"></div>
+  <div class="cd-display hidden" id="r4-cd">05:00</div>
+  <div class="broadcast" id="r4-bc">"你有两个选择。A：按下按钮，对面的人会被处理掉，门会开。B：不按，5分钟后房间被水淹没，你们都会死。哦对了——对面那个人，就是你来找的林夏。开始吧。"</div>
+  <div class="action-area"><button class="btn" onclick="r4_shout()">对着玻璃喊话</button><button class="btn hidden" id="r4-pills-btn" onclick="r4_pills()">使用红蓝药丸</button><button class="btn danger" id="r4-press-btn" onclick="r4_press()">按下红色按钮</button><button class="btn primary" onclick="r4_wait()">不按，等待倒计时结束</button></div>
+  <div id="r4-content"></div>
+  <div class="center mt-20"><button class="btn hidden" id="r4-dark-btn" onclick="goTo('dorm')">走廊尽头有一扇门…</button><button class="btn primary hidden" id="r4-skip-btn" onclick="goTo('dorm')">继续往前走 →</button></div>
+</div>
+
+<!-- 宿舍（新增） -->
+<div id="dorm" class="room"><div class="scene-card" id="dorm-scene"></div>
+  <div class="action-area"><button class="btn" onclick="dorm_diary()">翻看桌上的日记</button><button class="btn" onclick="dorm_photos()">看墙上的照片</button><button class="btn" onclick="dorm_underBed()">查看床下的纸箱</button><button class="btn" onclick="dorm_pillow()">掀开枕头</button></div>
+  <div id="dorm-content"></div>
+  <div class="center mt-20"><button class="btn hidden" id="dorm-dark-btn" onclick="goTo('darkroom')">左侧无标记的门（黑暗房间）</button><button class="btn hidden" id="dorm-morgue-btn" onclick="goTo('morgue')">右侧铁门（停尸间·可选）</button><button class="btn primary hidden" id="dorm-next" onclick="goTo('archiveroom')">离开宿舍 →</button></div>
+</div>
+
+<!-- 黑暗房间 -->
+<div id="darkroom" class="room"><div class="scene-card" id="dark-scene"></div>
+  <div class="action-area"><button class="btn hidden" id="dark-light-btn" onclick="dark_light()">使用打火机照亮</button><button class="btn" id="dark-nolight-btn" onclick="dark_nolight()">没有打火机，摸黑往前走</button></div>
+  <div id="dark-content"></div>
+  <div class="action-area hidden" id="dark-explore"><button class="btn" onclick="dark_follow()">沿着脚印往前走</button><button class="btn" onclick="dark_marks()">查看墙上的刻痕</button><button class="btn hidden" id="dark-box-btn" onclick="dark_openBox()">打开尽头的铁盒子</button></div>
+  <div class="pw-box hidden" id="dark-pwbox"><label>铁盒子的密码锁</label><input type="text" class="pw-input" id="dark-pw" maxlength="2"><div class="mt-20"><button class="btn primary" onclick="dark_submit()">确认</button></div></div>
+  <div class="center mt-20"><button class="btn hidden" id="dark-surgery-btn" onclick="goTo('surgery')">尽头有一扇手术室的门（可选）</button><button class="btn primary hidden" id="dark-next" onclick="goTo('archiveroom')">离开黑暗房间 →</button></div>
+</div>
+
+<!-- 停尸间（可选房间） -->
+<div id="morgue" class="room"><div class="scene-card" id="morgue-scene"></div>
+  <div class="action-area">
+    <button class="btn" onclick="morgue_table()">查看解剖台</button>
+    <button class="btn" onclick="morgue_cabinet()">检查停尸柜</button>
+    <button class="btn hidden" id="morgue-book-btn" onclick="morgue_book()">翻阅医学手册</button>
+  </div>
+  <div id="morgue-content"></div>
+  <div class="pw-box hidden" id="morgue-pwbox"><label>停尸柜密码锁（4位）—— 提示：世界上第一例成功的人类心脏移植手术，是哪一年完成的？</label><input type="text" class="pw-input" id="morgue-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="morgue_submit()">确认</button></div><p class="small mt-20">提示：去搜索"世界上第一例成功的人类心脏移植手术 年份"</p></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="morgue-next" onclick="goTo('dorm')">返回宿舍 →</button></div>
+</div>
+
+<!-- 手术室（可选房间） -->
+<div id="surgery" class="room"><div class="scene-card" id="surgery-scene"></div>
+  <div class="action-area">
+    <button class="btn" onclick="surgery_table()">查看手术台</button>
+    <button class="btn" onclick="surgery_tools()">检查器械架</button>
+    <button class="btn hidden" id="surgery-chart-btn" onclick="surgery_chart()">查看墙上的病历</button>
+  </div>
+  <div id="surgery-content"></div>
+  <div class="pw-box hidden" id="surgery-pwbox"><label>药品柜密码锁（4位）—— 提示：规范人体实验的《纽伦堡法典》，是哪一年颁布的？</label><input type="text" class="pw-input" id="surgery-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="surgery_submit()">确认</button></div><p class="small mt-20">提示：去搜索"纽伦堡法典 颁布年份"</p></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="surgery-next" onclick="goTo('darkroom')">返回黑暗房间 →</button></div>
+</div>
+
+<!-- 档案室 -->
+<div id="archiveroom" class="room"><div class="scene-card" id="archive-scene"></div>
+  <div class="action-area"><button class="btn" onclick="archive_browse()">浏览档案架</button><button class="btn hidden" id="archive-card-btn" onclick="archive_card()">使用员工卡刷门禁</button><button class="btn hidden" id="archive-lx-btn" onclick="archive_linxia()">查看林夏的档案</button><button class="btn hidden" id="archive-ds-btn" onclick="archive_designer()">查看"导师"档案</button><button class="btn hidden" id="archive-003-btn" onclick="archive_003()">查看003号实验体档案</button></div>
+  <div id="archive-content"></div>
+  <div class="center mt-20"><button class="btn hidden" id="archive-phone-btn" onclick="goTo('phonebooth')">走廊尽头有个电话亭（可选）</button><button class="btn primary hidden" id="archive-next" onclick="goTo('corridor')">前往最终走廊 →</button></div>
+</div>
+
+<!-- 电话亭（可选房间） -->
+<div id="phonebooth" class="room"><div class="scene-card" id="phone-scene"></div>
+  <div class="action-area">
+    <button class="btn" onclick="phone_enter()">走进电话亭</button>
+    <button class="btn hidden" id="phone-answer-btn" onclick="phone_answer()">接听电话</button>
+    <button class="btn hidden" id="phone-dial-btn" onclick="phone_dial()">拨打电话</button>
+  </div>
+  <div id="phone-content"></div>
+  <div class="pw-box hidden" id="phone-pwbox"><label>电话亭储物格密码锁（4位）—— 提示："生如夏花之绚烂，死如秋叶之静美"这句诗的作者，出生于哪一年？</label><input type="text" class="pw-input" id="phone-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="phone_submit()">确认</button></div><p class="small mt-20">提示：去搜索"生如夏花之绚烂 作者 出生年份"</p></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="phone-next" onclick="goTo('archiveroom')">返回档案室 →</button></div>
+</div>
+
+<!-- 密码走廊（新增） -->
+<div id="corridor" class="room"><div class="scene-card" id="corr-scene"></div>
+  <div class="action-area"><button class="btn" onclick="corr_doors()">检查两侧的门</button><button class="btn" onclick="corr_finalDoor()">检查尽头的密码门</button></div>
+  <div id="corr-content"></div>
+  <div class="pw-box hidden" id="corr-pwbox"><label>最终密码门（6位）</label><input type="text" class="pw-input" id="corr-pw" maxlength="6"><div class="mt-20"><button class="btn primary" onclick="corr_submit()">确认</button></div></div>
+  <div class="center mt-20"><button class="btn primary hidden" id="corr-next" onclick="goTo('room5')">门开了，走进监控室 →</button></div>
+</div>
+
+<!-- 第五关 -->
+<div id="room5" class="room"><div class="scene-card" id="r5-scene"></div>
+  <div class="broadcast">"你走到了最后。坐下来，我们谈谈。"</div>
+  <div class="action-area"><button class="btn hidden" id="r5-usb-btn" onclick="r5_usb()">把U盘插进电脑</button><button class="btn hidden" id="r5-bat-btn" onclick="r5_battery()">给夜视仪装电池</button><button class="btn hidden" id="r5-ngp-btn" onclick="r5_mentorDoor()">用深渊钥匙打开隐藏门</button></div>
+  <div id="r5-content"></div>
+  <div class="choice-list hidden" id="r5-choice">
+    <p style="margin-bottom:14px;color:var(--red)">电脑屏幕上出现了最终选项：</p>
+    <button class="btn" id="r5-btn-a" onclick="r5_choiceA()">【选项A】打开出口大门 —— 立刻离开，所有数据自动销毁</button>
+    <button class="btn" id="r5-btn-b" onclick="r5_choiceB()">【选项B】按下报警按钮并锁死所有门 —— 你会被困住，但设计者跑不掉</button>
+    <button class="btn hidden" id="r5-btn-c" onclick="r5_choiceC()">【选项C】和林夏谈谈 —— 你想知道她为什么要这么做</button>
+    <button class="btn hidden" id="r5-btn-d" onclick="r5_choiceD()">【选项D】加入她 —— 你认同她的判决，愿意和她一起</button>
+    <button class="btn hidden" id="r5-btn-e" onclick="r5_choiceE()">【选项E】喝下记忆消除剂 —— 忘记这一切，重新开始</button>
+  </div>
+</div>
+
+<!-- 导师房间（二周目新增） -->
+<div id="mentor-room" class="room"><div class="scene-card" id="mentor-scene"></div>
+  <div class="action-area"><button class="btn" onclick="mentor_wall()">查看墙上的线索墙</button><button class="btn" onclick="mentor_desk()">检查书桌</button><button class="btn" onclick="mentor_typewriter()">查看打字机</button><button class="btn hidden" id="mentor-photo-btn" onclick="mentor_photo()">拼合照片</button></div>
+  <div id="mentor-content"></div>
+  <div class="center mt-20"><button class="btn purple hidden" id="mentor-next" onclick="goTo('memory')">走进记忆回廊 →</button></div>
+</div>
+
+<!-- 记忆回廊（二周目新增） -->
+<div id="memory" class="room"><div class="scene-card" id="mem-scene"></div>
+  <div id="mem-content"></div>
+  <div class="center mt-20"><button class="btn purple hidden" id="mem-next" onclick="r5_choiceB()">做出最终选择 →</button></div>
+</div>
+
+<!-- 结局A -->
+<div id="ending-a" class="room"><div class="ending"><h2>结局 A · 逃离者</h2>
+  <div class="ending-text">
+    <p>你点击了"打开出口大门"。监控室的一面墙缓缓升起，外面是一条通道，尽头是刺眼的阳光。</p>
+    <p>你走了出去，站在街道上大口呼吸。九月的阳光照在你身上，温暖得让你想哭。</p>
+    <p>你回头看——出来的地方是一家普通商铺后门，门上挂着"深渊回廊密室逃脱"的招牌。一切看起来都那么正常。</p>
+    <p>你掏出手机想报警，但发现U盘里的视频在你离开的那一刻自动删除了。你甚至无法证明自己进去过。</p>
+    <p>三天后，新闻报道："又一名年轻人在'深渊回廊'密室逃脱店内失踪，警方已介入调查。"</p>
+    <p>你关掉电视。手机震动，一条匿名短信：<span class="warn">"你欠我一条命。下次，轮到你了。"</span></p>
+    <p>你看着窗外。对面楼的某个窗户里，似乎有一个红点在闪烁——像是一个摄像头的指示灯。</p>
+    <div class="ending-quote">"你逃离了深渊，但深渊记住了你。"</div>
+  </div>
+  <button class="btn mt-20" onclick="restart()">重新开始</button></div>
+</div>
+
+<!-- 结局B -->
+<div id="ending-b" class="room"><div class="ending"><h2>结局 B · 揭秘者</h2>
+  <div class="ending-text">
+    <p>你深吸一口气，按下了"报警按钮"。所有铁门同时发出"哐当"的锁死声。</p>
+    <p>你坐在椅子上，听着远处急促的脚步声。广播第一次没有用变声器，是一个年轻女人的声音：</p>
+    <div class="broadcast">"你选了B。我以为你会选A。但你没有。你和她一样。"</div>
+    <p>你问："你是谁？林夏在哪里？"</p>
+    <div class="broadcast">"我是谁不重要。林夏还活着。她在一个你找不到的地方。但如果你今天能活着等到警察，也许有一天你能找到她。"</div>
+    <p>脚步声停在了门外，然后远去了。十五分钟后，警察破门而入。</p>
+    <p>他们在地下层找到了7个被囚禁的人，其中包括林夏。她瘦了很多，但还活着。设计者没有被抓到——监控显示，她在警察到达前5分钟从秘密通道离开了。</p>
+    <p>医院里，林夏躺在病床上，虚弱地笑了："我就知道你不会按那个按钮。对不起，把你卷进来了。"</p>
+    <p>一个月后，你在整理林夏的遗物时，发现了一张旧照片——两个长得一模一样的女孩，站在一家密室逃脱店门口。背面写着："2020年夏天，和姐姐的第一次密室逃脱。"</p>
+    <p>你盯着照片里的另一个女孩，看了很久。</p>
+    <div class="ending-quote">"深渊之所以可怕，是因为它总能放大人性的恶。但总有人，选择做个人。"</div>
+  </div>
+  <button class="btn mt-20" onclick="restart()">重新开始（解锁二周目）</button></div>
+</div>
+
+<!-- 结局C -->
+<div id="ending-c" class="room"><div class="ending"><h2>结局 C · 沉沦者</h2>
+  <div class="ending-text">
+    <p>你在第五关做出了选择。但门没有开。</p>
+    <p>所有屏幕全部黑了。广播的声音从四面八方传来，像是整个房间都在说话：</p>
+    <div class="broadcast">"恭喜你。你通过了筛选。在第四关，你为了自己按下了按钮。你杀死了一个'可能无辜'的人，甚至没有犹豫太久。这就是我们需要的品质——果断、自私、能做艰难的决定。你会成为一个优秀的'筛选者'。"</div>
+    <p>另一面墙打开了。外面不是街道，而是另一条走廊。走廊两侧是一个个新的房间，每个门口都站着穿黑色制服的人。</p>
+    <p>一个戴面具的女人走过来，递给你一套黑色制服："欢迎加入。你的第一个任务，是观察下一批玩家。就像当初，有人观察你一样。"</p>
+    <p>你低头看着手里的制服。你想起了第四关的假人，想起了自己按下按钮时，手指没有丝毫颤抖。</p>
+    <p>你穿上了制服。她带你走到一个监控屏幕前——屏幕里，五个年轻人正走进等候区，其中一个女孩的手里攥着一张照片。</p>
+    <p>女人说："开始吧。"</p>
+    <p>你坐下来，拿起对讲机。你听到自己的声音，经过变声器，说：<span class="warn">"欢迎来到深渊回廊。"</span></p>
+    <div class="ending-quote">"你以为你在玩游戏，其实，你已经成为了游戏的一部分。"</div>
+  </div>
+  <button class="btn mt-20" onclick="restart()">重新开始</button></div>
+</div>
+
+<!-- 结局D（二周目真结局） -->
+<div id="ending-d" class="room"><div class="ending"><h2 class="purple">结局 D · 双生者</h2>
+  <div class="ending-text">
+    <p>你按下了报警按钮。所有铁门同时锁死。</p>
+    <p>但这一次，你没有坐在监控室里等。你拿着从导师房间找到的笔记本和拼合的照片，站在了秘密通道的入口。</p>
+    <p>脚步声从远处传来。她来了。</p>
+    <p>通道的门开了。一个女人站在门口——和你长得一模一样。她穿着黑色制服，头发比你短一些，眼角有一道细小的疤。</p>
+    <p>她看着你，笑了："姐姐，你终于找到这里了。我等了你很久。"</p>
+    <p>"我不是你的姐姐，"你说，"林夏才是。"</p>
+    <p>她摇摇头："不。我是林夏。你才是姐姐。你进去之前，被我消除了记忆。你以为你是'来救朋友的人'，其实你是我选定的第008号实验体。"</p>
+    <p>她举起手里的照片——和你手里的那张拼合在一起，是完整的一对双胞胎合影。照片背面写着："林曦&林夏，2019年夏天。"拍照的人，是你。</p>
+    <p>"2020年，大姐林曦在'深巷'密室逃脱店死了。你忘了吗？是你拉着她去玩的。她有心脏病，你知道，但她说下周就要做手术了，想最后体验一次。她在密室里发作，你跑去叫人，等你回来的时候，她已经凉了。"</p>
+    <p>你的头剧烈地痛起来。碎片一样的记忆涌上来——医院的白光、医生的摇头、你跪在地上哭、林夏抱着你说"不是你的错"。</p>
+    <p>"所以你创建了深渊回廊？"你声音颤抖，"为了什么？"</p>
+    <p>"为了筛选。"她的眼睛亮了起来，"大姐死的时候，那个密室里的其他人都在自顾自地逃跑。没有一个人停下来帮她。我想知道——人在极端环境下，到底会不会选择帮助别人。"</p>
+    <p>"第四关的按钮，就是测试。按了的人，是和当年那些人一样的懦夫。没按的人……是和林曦一样的人。"</p>
+    <p>"之前没按按钮的人，我让他们活了下来。你也没按。所以你也通过了。"</p>
+    <p>警笛声从远处传来。她没有逃。她坐下来，把双手放在桌上。</p>
+    <p>"你赢了，姐姐。但你记住——你今天做的选择，和我做的，本质上是一样的。你为了你认为对的事，把我关在了这里。我为了我认为对的事，把别人关在了那些房间里。"</p>
+    <p>"我们是一样的。"</p>
+    <p>警察冲进来的时候，她还在笑。</p>
+    <p>三个月后，法庭上，你作为关键证人出庭。笔记本和照片作为证据，让她被判了无期徒刑。</p>
+    <p>你走出法院，阳光很好。街上人来人往，没有人知道这座城市地下曾经有过一座深渊回廊。</p>
+    <p>但你知道没有结束。因为你口袋里，还放着那把深渊钥匙。</p>
+    <p>那天晚上，你做了一个梦。梦里你站在一个全是镜子的房间里，镜子里的你举起手，你慢了半拍才举起手。</p>
+    <p>你醒来的时候，手机屏幕亮着。一条没有发件人的短信：</p>
+    <p class="purple" style="text-align:center;font-size:16px;margin:18px 0">"第8道刻痕，名字是空的。日期，也是空的。"</p>
+    <p>你摸了摸口袋里的钥匙。它是温热的。</p>
+    <div class="ending-quote">"深渊不会消失。它只是换了一个人，继续凝视。"</div>
+  </div>
+  <button class="btn purple mt-20" onclick="restart()">重新开始</button></div>
+</div>
+
+<!-- 结局E：沉沦者 -->
+<div id="ending-e" class="room"><div class="ending"><h2 style="color:#666">结局 E · 沉沦者</h2>
+  <div class="ending-text">
+    <p>你按下了第四关的红色按钮。</p>
+    <p>水位停止了上涨。玻璃对面的"人"倒下了——是个假人，和你在审判庭里听到的一样。</p>
+    <p>但你没有感到轻松。你想起审判庭上自己说的话："如果是我，我也可能见死不救。"</p>
+    <p>你确实见死不救了。为了自己活下去，你按下了按钮。</p>
+    <p>广播响起，这一次没有变声器：</p>
+    <div class="broadcast">"你通过了测试。你和2020年那些人，一模一样。<br>你知道吗？我姐姐死的时候，她也在拍门，也在喊救命。<br>门外的人，和你一样，选择了自己。"</div>
+    <p>铁门打开了。但你没有走出去。</p>
+    <p>你坐在地上，看着自己的手。这双手，刚刚按下了一个可能杀死别人的按钮。</p>
+    <p>广播再次响起："门开着。你可以走。但你走到哪里，都会带着这双手。"</p>
+    <p>你站起来，走向门口。但在门槛前，你停住了。</p>
+    <p>你转身，走回了房间中央。你坐下来，闭上眼睛。</p>
+    <p>"我和他们一样，"你低声说，"那我应该和他们一样，留在这里。"</p>
+    <p>铁门缓缓关上。</p>
+    <p>三天后，新一批玩家进入深渊回廊。他们在第四关看到玻璃对面坐着一个人，低着头，一动不动。</p>
+    <p>广播说："那是上一个玩家。他选择了留下。"</p>
+    <p>"你们也可以选择。"</p>
+    <div class="ending-quote">"当你凝视深渊时，深渊也在凝视你。而你，选择了成为深渊的一部分。"</div>
+  </div>
+  <button class="btn mt-20" onclick="restart()">重新开始</button></div>
+</div>
+
+<!-- 结局F：同谋者 -->
+<div id="ending-f" class="room"><div class="ending"><h2 style="color:var(--red)">结局 F · 同谋者</h2>
+  <div class="ending-text">
+    <p>监控室的屏幕上，林夏看着你。</p>
+    <p>"你做出了和我一样的判决，"她说，"那些人有罪。他们应该受到惩罚。"</p>
+    <p>"你在第四关没有按按钮。你不是懦夫。你和我一样，我们都相信正义。"</p>
+    <p>她从屏幕后面走出来——真人。她比照片上瘦很多，眼睛里有血丝，但很亮。</p>
+    <p>"姐姐，"她说，"我知道你恢复了一些记忆。你记得林曦，对吗？"</p>
+    <p>你点头。你的头在痛，但记忆的碎片越来越清晰。</p>
+    <p>"林曦是我们的姐姐。她死的时候，那些人没有一个帮她。法律没有惩罚他们。上帝没有惩罚他们。"</p>
+    <p>"所以我建了深渊回廊。我来惩罚他们。"</p>
+    <p>她向你伸出手："加入我。我们一起。你有共情能力，你能判断谁是好人谁是坏人。我负责执行。"</p>
+    <p>"我们可以让这个世界变得更好。把那些自私的、懦弱的、见死不救的人，都清理掉。"</p>
+    <p>你看着她的手。你想起了林曦。你想起了2020年那个夏天。你想起了那些在监控里看着姐姐死去的人。</p>
+    <p>你握住了她的手。</p>
+    <p>"好，"你说，"我们一起。"</p>
+    <p>她笑了。这是你第一次看到她笑。</p>
+    <p>三个月后，深渊回廊重新开业。新一批玩家走进等候区，阅读玩家须知。</p>
+    <p>监控室里，你和林夏并排坐着，看着屏幕。</p>
+    <p>"第一个，"林夏说，"你觉得他会按按钮吗？"</p>
+    <p>你看着屏幕里那个紧张的年轻人，想起了自己。</p>
+    <p>"会的，"你说，"大部分人都会。"</p>
+    <p>"那就让他按。"</p>
+    <div class="ending-quote">"复仇不会终结复仇。它只会让更多人，成为复仇者。"</div>
+  </div>
+  <button class="btn mt-20" onclick="restart()">重新开始</button></div>
+</div>
+
+<!-- 结局G：失忆者 -->
+<div id="ending-g" class="room"><div class="ending"><h2 style="color:#888">结局 G · 失忆者</h2>
+  <div class="ending-text">
+    <p>监控室里，林夏看着你。</p>
+    <p>"你恢复了记忆，"她说，"你记得林曦，记得2020年，记得是你带她去的密室。"</p>
+    <p>你的头在痛。记忆像潮水一样涌来，每一个碎片都像刀子一样扎进你的脑子里。</p>
+    <p>"是我的错，"你说，"如果不是我拉着她去玩……"</p>
+    <p>"不是你的错，"林夏说，"是那些见死不救的人的错。"</p>
+    <p>"但我还是……"你说不下去了。</p>
+    <p>林夏从抽屉里拿出一个小瓶子，放在桌上。</p>
+    <p>"这是记忆消除剂。和五年前给你用的一样。喝下去，你会忘记这一切。忘记林曦，忘记深渊回廊，忘记我。"</p>
+    <p>"你可以重新开始。做一个普通人，过普通的生活。"</p>
+    <p>你看着那个小瓶子。蓝色的液体，在灯光下微微发光。</p>
+    <p>"你呢？"你问。</p>
+    <p>"我会继续，"她说，"这是我的选择。"</p>
+    <p>你拿起瓶子，拧开盖子。</p>
+    <p>"对不起，"你说，"林夏。"</p>
+    <p>你喝了下去。</p>
+    <p>世界开始模糊。你看到林夏的脸在你面前，她在哭，但你已经不记得她是谁了。</p>
+    <p>你醒来的时候，躺在医院的病床上。阳光很好。护士说你被人发现晕倒在路边，已经昏迷了三天。</p>
+    <p>你不记得自己是谁，不记得发生了什么。你的口袋里有一张照片——两个长得一模一样的女孩，在游乐园门口笑得很开心。背面写着"林曦&林夏，2019年"。</p>
+    <p>"林曦是谁？"你问护士。<br>"林夏又是谁？"</p>
+    <p>护士摇摇头。</p>
+    <p>你出院那天，路过一条小巷。巷子里有一家店，招牌上写着"深渊回廊密室逃脱"。</p>
+    <p>你不知道为什么，眼泪突然流了下来。</p>
+    <p>你转身走了。</p>
+    <p>但那天晚上，你做了一个梦。梦里是一个全是镜子的房间，镜子里有一个女孩，在拍门，在喊救命。</p>
+    <p>你醒来的时候，枕头是湿的。</p>
+    <div class="ending-quote">"你可以忘记过去。但过去，不会忘记你。"</div>
+  </div>
+  <button class="btn mt-20" onclick="restart()">重新开始</button></div>
+</div>
+
+<!-- 结局H：和解（真结局） -->
+<div id="ending-h" class="room"><div class="ending"><h2 class="gold">结局 H · 和解（真结局）</h2>
+  <div class="ending-text">
+    <p>监控室的门开了。林夏走了进来。</p>
+    <p>她没有穿制服，只是一件普通的白色T恤。她看起来很累，但很平静。</p>
+    <p>"你收集了所有的东西，"她说，"葬礼照片、日记、圣经里的批注、哲学书里的书签……你看完了我的全部。"</p>
+    <p>"你在审判庭说，他们有错，但罪不至死。"</p>
+    <p>"你在第四关没有按按钮。"</p>
+    <p>"你和林曦一样。善良。"</p>
+    <p>你的眼泪流了下来。记忆全部恢复了——2020年的夏天，密室，姐姐倒下，你拍门，你喊人，你跑出去叫救护车……</p>
+    <p>"对不起，"你说，"林夏。对不起。是我带她去的。是我的错。"</p>
+    <p>林夏走过来，抱住了你。</p>
+    <p>"不是你的错，"她在你耳边说，"从来都不是你的错。"</p>
+    <p>"我建深渊回廊，不是为了惩罚别人。是为了惩罚我自己。"</p>
+    <p>"那天我也在。我在隔壁房间。我听到了她在喊。但我害怕。我没有去开门。"</p>
+    <p>"我一直在想，如果我去开门，她是不是就不会死。"</p>
+    <p>你愣住了。你从来不知道这件事。</p>
+    <p>"所以我建了深渊回廊。我想知道，人在极端环境下，会不会选择帮助别人。"</p>
+    <p>"你没有按按钮。你选择了帮助对面的人。你证明了，人可以是善良的。"</p>
+    <p>"谢谢你，姐姐。"</p>
+    <p>你们抱在一起，哭了很久。</p>
+    <p>那天晚上，你们一起关闭了深渊回廊。林夏删除了所有的实验数据，烧掉了笔记本。</p>
+    <p>"那些被囚禁的人呢？"你问。</p>
+    <p>"我已经放了他们，"她说，"在你进入游戏的时候。"</p>
+    <p>你们一起去了警局。林夏自首了。因为她主动释放了所有人，并且有重大立功表现，被判了五年。</p>
+    <p>你每个月都去看她。她在监狱里学了心理学，说出来以后想做心理咨询师，帮助那些和她一样有创伤的人。</p>
+    <p>五年后，她出狱那天，你去接她。</p>
+    <p>阳光很好。你们一起去了林曦的墓前。</p>
+    <p>林夏把一束白菊放在墓碑前，轻声说："姐姐，我放下了。"</p>
+    <p>你握住她的手。</p>
+    <p>风很轻。天很蓝。</p>
+    <div class="ending-quote">"复仇不能让死者复生。只有宽恕，才能让生者活下去。"</div>
+  </div>
+  <button class="btn gold mt-20" onclick="restart()">重新开始（真结局达成！）</button></div>
+</div>
+
+<!-- 线索面板 -->
+<div id="clues-panel" class="room">
+  <div class="scene-card" style="border-left-color:var(--gold)"><strong>已收集的线索</strong> —— 点击返回回到游戏</div>
+  <div id="clues-list"></div>
+  <div class="center mt-20"><button class="btn primary" onclick="closeClues()">返回游戏</button></div>
+</div>
+</div>
+
+<!-- 道具栏 -->
+<div id="inv-bar"><span class="inv-label">道具栏</span><div id="inv-slots" style="display:flex;gap:8px"></div></div>
+
+<script>
+// ==================== 配置 ====================
+const BG = {
+  'start-screen':'images/corridor.jpg','room-intro':'images/corridor.jpg',
+  'room1':'images/mirror.jpg','room2':'images/radio.jpg',
+  'elevator':'images/elevator.jpg','timeroom':'images/clocks.jpg',
+  'room3':'images/mirror.jpg','textroom':'images/textroom.jpg',
+  'emailroom':'images/monitor.jpg','confessional':'images/church.jpg','library':'images/library.jpg','courtroom':'images/courtroom.jpg','room4':'images/choice.jpg',
+  'dorm':'images/dorm.jpg','darkroom':'images/radio.jpg',
+  'morgue':'images/morgue.jpg','surgery':'images/surgery.jpg',
+  'archiveroom':'images/monitor.jpg','phonebooth':'images/phonebooth.jpg','corridor':'images/finalcorridor.jpg',
+  'room5':'images/monitor.jpg','mentor-room':'images/mentor.jpg',
+  'memory':'images/mentor.jpg',
+  'ending-a':'images/corridor.jpg','ending-b':'images/corridor.jpg',
+  'ending-c':'images/monitor.jpg','ending-d':'images/mentor.jpg','ending-e':'images/morgue.jpg','ending-f':'images/monitor.jpg','ending-g':'images/dorm.jpg','ending-h':'images/church.jpg'
+};
+const RN = {'start-screen':'深渊回廊','room-intro':'等候区','room1':'第一关·镜之房间','room2':'第二关·声之房间','elevator':'电梯','timeroom':'时间房间','room3':'第三关·画之房间','textroom':'文字房间','emailroom':'邮件房间','confessional':'告解室','library':'图书馆','courtroom':'审判庭','room4':'第四关·抉择房间','dorm':'宿舍','darkroom':'黑暗房间','morgue':'停尸间','surgery':'手术室','archiveroom':'档案室','phonebooth':'电话亭','corridor':'最终走廊','room5':'终章·监控室','mentor-room':'导师的房间','memory':'记忆回廊','ending-a':'结局A','ending-b':'结局B','ending-c':'结局C','ending-d':'结局D','ending-e':'结局E','ending-f':'结局F','ending-g':'结局G','ending-h':'结局H','clues-panel':'线索'};
+
+const ITEMS = {
+  lighter:{n:'打火机',i:'🔥',d:'旧Zippo，还剩半罐油，外壳刻着字母"L"'},
+  oldKey:{n:'旧钥匙',i:'🔑',d:'铜制钥匙，柄上刻着数字"3"'},
+  recorder:{n:'录音笔',i:'🎙️',d:'里面有一段模糊的录音，电量很低'},
+  halfPhoto:{n:'半张照片',i:'📷',d:'穿白大褂的男人侧脸，背面写"他不是医生"'},
+  newsClipping:{n:'报纸剪报',i:'📰',d:'2020年密室意外身亡报道，女子姓名被涂黑'},
+  pills:{n:'红蓝药丸',i:'💊',d:'一红一蓝，标签写着"选择"'},
+  employeeCard:{n:'员工卡',i:'💳',d:'写着"实习生·林夏"，可刷档案室门禁'},
+  usb:{n:'U盘',i:'💾',d:'外壳上用记号笔写着"真相"'},
+  battery:{n:'夜视仪电池',i:'🔋',d:'一节五号电池，还能用'},
+  diaryKey:{n:'小铜钥匙',i:'🗝️',d:'从宿舍枕头下找到的，很小'},
+  crossPendant:{n:'十字架吊坠',i:'✝️',d:'银制十字架，背面刻着"林曦，2020"，是姐姐的遗物'},
+  morgue_record:{n:'林曦的病历',i:'📋',d:'停尸间找到的病历，写着"先天性心脏病，2020.7.15死亡"'},
+  surgery_badge:{n:'张医生的工作证',i:'🪪',d:'手术室找到的工作证，照片上的男人和半张照片上的是同一个人'},
+  phone_tape:{n:'神秘电话录音',i:'📼',d:'电话亭里的录音带，是2020年那通急救电话的后半段录音'},
+  abyssKey:{n:'深渊钥匙',i:'🗝️',d:'黑色钥匙，刻着螺旋纹（二周目继承）'},
+  otherHalfPhoto:{n:'另一半照片',i:'📷',d:'照片的另一半，一个女人的正脸'},
+  fullPhoto:{n:'拼合的照片',i:'🖼️',d:'一对双胞胎姐妹的合影'},
+  notebook:{n:'设计者的笔记本',i:'📓',d:'硬皮笔记本，记录了所有玩家的实验数据'}
+};
+
+const CLUES = {
+  rules:{t:'玩家须知',x:'《深渊回廊 · 玩家须知》<br>1. 本游戏共20个房间，可能会有奇遇到神奇的房间，通关者可获得奖金50万元并安全离开。<br>2. 每个房间有且仅有一个正确解法。暴力破坏设施者视为放弃资格。<br>3. 游戏中可能产生恐惧、焦虑，属正常体验。如有不适请呼喊"放弃"。<br><span style="color:var(--red)">4. 失败者……将成为房间的一部分。</span><br>5. 最终解释权归本店所有。<br><br><span style="color:var(--text-dim);font-size:12px">第4条字迹和其他不同，像是后来用记号笔补上去的。</span>'},
+  notebook:{t:'前玩家的笔记本',x:'<strong>第1页</strong>：2025.3.10。我们五个人约好来玩。听说全市只有3个人通关过。<br><br><strong>第2页</strong>：2025.3.14。第二关的收音机太吓人了。陈雪哭了说想走，但门打不开。<br><br><strong>第3页</strong>：第三关。孙磊把画砸了，然后他就不见了。广播说"暴力破坏者，已处理"。<br><br><strong>第4页</strong>：第四关。他们让我选。我没按。他们三个都按了。但玻璃升起来的时候，对面是个假人。<br><br><strong>第5页</strong>（只有四个字）：<span style="color:var(--red)">"不要相信。"</span>'},
+  cigarette:{t:'烟灰缸里的烟头',x:'烟灰缸里有一个烟头，烟嘴上有暗红色的口红印。你认出这个色号——是林夏常用的。她确实来过这里，而且不久前还在。'},
+  intro_wall:{t:'墙上的划痕与门禁卡',x:'等候区的墙上有很多划痕，最新的一道旁边写着"她在骗你"。<br>桌底捡到一张旧门禁卡，背面用记号笔写着6位数字：<strong>250314</strong>。'},
+  sms:{t:'林夏的短信',x:'手机屏幕亮了一下，是林夏发来的短信，时间显示是三天前：<br>"别进来。第三间房的画是假的。"'},
+  r1_lipstick:{t:'镜子背面的口红字',x:'你把镜子取下来翻到背面，发现有人用红色口红写了一行字：<br>"第二关，别听它的。"<br>是林夏的字迹。她在提醒你。'},
+  r2_note:{t:'地板下的碎纸条',x:'你撬开地板缝隙，从里面掏出一张被揉皱的纸条，上面写着：<br>"它会模仿你认识的人的声音。林夏，别信。地板下面有东西。"'},
+  elev_blood:{t:'电梯镜子上的血字',x:'电梯的镜子上，有人用红色口红（或者血？）写了两个字："3楼"。<br>但电梯的楼层按钮只有B1、B2、B3。你现在在B1。<br>这是什么意思？'},
+  time_recorder:{t:'倒走钟表里的纸条',x:'你拆开倒走的钟表，里面塞着一张纸条：<br>"答案是——我停止的那一刻。"<br>录音笔里有一段倒放的语音，正放后是林夏的声音："反过来念。"'},
+  time_news:{t:'2020年新闻剪报',x:'报纸剪报的标题：《密室逃脱店发生意外，一女子身亡》<br>正文：2020年7月15日，本市"深巷"密室逃脱店内，一名23岁女子在游戏过程中突发心脏病，因店内员工未及时发现并施救，送医后不治身亡。死者姓名被涂黑，旁边有人用红笔写了一个字："她"。<br>剪报背面写着："见死不救的人，都该死。"'},
+  r3_photo:{t:'抽屉里的半张照片',x:'半张照片，上面是一个穿白大褂的男人的侧脸，背景是一排休眠舱。照片背面写着："他不是医生。"'},
+  text_red:{t:'四个红色的字',x:'纯白房间的四面墙上，各有一个红色的字：<br>北墙："死"<br>东墙："生"<br>南墙："门"<br>西墙："口"<br>按进门的顺序（北→东→南→西）：死生门口。'},
+  text_hint:{t:'录音笔的提示',x:'你按下录音笔的播放键，里面是一段倒放的语音。你用手机录下来倒放后，听到林夏的声音：<br>"反过来念。"<br>"死生门口"反过来念是"口门生"。口=3画，门=3画，生=5画，死=6画 → 密码3356。'},
+  email_doctor:{t:'张医生的邮件',x:'发件人：张医生<br>收件人：管理员<br>日期：2025.6.20<br><br>007号实验体（林夏）已完成全部5个房间的测试。<br><br>关键结果：第四关抉择房间中，该实验体在水位到达腰部的情况下，仍未按下按钮。心理测评结果为"极度共情型"。<br><br>评定：高价值样本。建议转入"继承人培养计划"。<br><br>备注：该实验体有一个双胞胎姐姐，根据背景调查，姐姐性格与林夏截然不同，可能成为下一批实验体的理想人选。已安排接触。'},
+  email_linxia:{t:'林夏的邮件',x:'发件人：林夏<br>收件人：（未发送，存为草稿）<br><br>如果你看到这封邮件，说明我没能把证据带出去。<br><br>我查到了一些东西：这个密室不是普通的密室逃脱，它是一个筛选装置。设计者在通过这些房间筛选两种人——"绝对服从"的和"绝对自私"的，然后招募进一个组织。<br><br>第四关的按钮就是筛选器。按了的人是"可操控的"，没按的人是"有价值的"。我没有按，所以他们让我成为了"筛选者"。<br><br>但我不想变成那样。我在找证据。<br><br>如果你是姐姐，或者任何看到这封邮件的人：不要按第四关的按钮。档案室的密码是我的入职日期：0715。那里有你需要的一切。<br><br>—— 林夏'},
+  email_admin:{t:'管理员邮件',x:'发件人：管理员<br>收件人：全体员工<br>日期：2025.7.1<br><br>通知：档案室门禁密码已更新为员工入职日期格式（月+日，共4位）。<br>林夏入职日期：2024年7月15日 → 密码0715。<br>请各部门知悉，勿将密码外泄。'},
+  conf_cross:{t:'十字架上的刻字',x:'告解室的木制十字架底部，有人用小刀刻了一行字：<br>"马太福音 第7章"<br>旁边还有一行更小的字："叩门，就给你们开门。"<br>墙上刻着："你们要查考圣经。——约翰福音 5:39"'},
+  conf_bible:{t:'圣经里的纸条',x:'翻开泛黄的圣经，中间夹着一张纸条，娟秀的字迹写着：<br>"约翰福音 第11章——圣经中最短的一节经文，只有四个字：耶稣哭了。<br>这是第几节？找到它，你就能找到我留下的东西。"'},
+  conf_funeral:{t:'葬礼照片',x:'画后暗格里的照片——一场葬礼。黑色的墓碑上写着：<br><strong style="color:var(--red)">"林曦 1997-2020"</strong><br>照片背面写着一行字，字迹因泪水而模糊：<br>"我的姐姐，我会让那些见死不救的人付出代价。——2020年7月20日"'},
+  lib_bible:{t:'圣经里的批注',x:'图书馆的圣经里，有人用红笔在《罗马书》12章19节旁边写了批注：<br>"亲爱的兄弟，不要自己伸冤，宁可让步，听凭主怒。因为经上记着：主说，伸冤在我，我必报应。"<br>批注："可是上帝没有报应他们。所以，我来。"'},
+  lib_philo:{t:'哲学著作里的书签',x:'《查拉图斯特拉如是说》里夹着一张书签，上面写着：<br>"上帝已死。是我们杀死了他。"——尼采《快乐的科学》第125节<br>背面写着："如果上帝不存在，那么一切都是允许的。包括我的复仇。我读了三年的哲学和宗教，想找到一个答案。但没有一本书能告诉我，为什么人会见死不救。所以我决定自己找答案。"'},
+  lib_secret:{t:'书架暗格里的日记',x:'密码锁打开后，暗格里是一本林夏的私人日记：<br>"2023.5.1：我读完了所有的哲学和宗教书。没有一本能告诉我，为什么人会见死不救。<br>2023.6.15：我决定自己找答案。我要建一座迷宫，把人放进去，看他们在极端环境下会怎么做。<br>2024.1.1：深渊回廊建成了。第一个实验体，王浩。他在第三关砸了画。暴力者，已处理。<br>2024.12.20：陈雪按了第四关的按钮。服从者，已招募。<br>……<br>2025.7.1：第008号实验体，是她。我的姐姐。我要看看，她会不会按那个按钮。"'},
+  court_verdict:{t:'审判庭的判决',x:'你在审判庭做出了选择。<br>广播说："你的判决，就是你内心的答案。<br>记住你今天说的话。在第四关，你会用到它。"'},
+  court_guilty:{t:'你的判决：有罪',x:'你宣判2020年那些见死不救的人"有罪，应该受到惩罚"。<br>广播："很好。你和我想的一样。那么，在第四关，你应该知道怎么做了。"'},
+  court_notguilty:{t:'你的判决：罪不至死',x:'你宣判他们"有错，但罪不至死"。<br>广播："你很仁慈。但仁慈，有时候是另一种残忍。<br>在第四关，你会明白我的意思。"'},
+  court_same:{t:'你的判决：我也会这样',x:'你承认"如果是我，我也可能见死不救"。<br>广播沉默了很久，然后说："诚实。我欣赏诚实。<br>但你知道吗？2020年那天，他们也是这么想的。<br>他们以为只是一个游戏。他们以为她在演戏。<br>然后她死了。"'},
+  morgue_body:{t:'解剖台上的尸体',x:'你鼓起勇气掀开白布。下面是一具女性尸体，脸上盖着一块手帕。<br>尸体的手腕上有一个标签，写着："无名女尸，2020.7.15，死因：心脏骤停。"<br>手帕上绣着两个字母："LX"。<br>林曦？这是林曦的尸体？她一直在这里？'},
+  morgue_cpr:{t:'医学手册里的批注',x:'《心脏外科史》里，有人用红笔在"1967年，巴纳德医生完成了世界上第一例人类心脏移植手术"旁边写了批注：<br>"如果2020年那天，她能被及时送到医院，是不是也能有机会？<br>他们甚至没有打120。他们只是看着。"'},
+  morgue_record:{t:'林曦的病历',x:'停尸柜里找到的病历：<br>姓名：林曦<br>年龄：23岁<br>诊断：先天性心脏病（法洛四联症）<br>死亡时间：2020年7月15日 15:42<br>死亡原因：心脏骤停，抢救无效<br><br>病历最后一页有一行手写的字："抢救延迟27分钟。如果及时，存活率可达40%。"'},
+  surgery_table:{t:'手术台上的血迹',x:'手术台上有干涸的血迹，已经变成深褐色。<br>血迹的形状像是一个人形——有人曾经躺在这里。<br>旁边的器械架上，手术刀少了一把。<br>墙上的病历写着："患者：林曦，手术：未进行。"'},
+  surgery_defib:{t:'除颤仪上的记录',x:'你检查除颤仪。屏幕上还保存着最后一次使用记录：<br>时间：2020.7.15 15:30<br>能量：200J（双相波）<br>结果：未恢复自主心律<br><br>15:30就已经开始抢救了？但病历写着15:42才死亡。<br>这12分钟里发生了什么？'},
+  surgery_badge:{t:'张医生的工作证',x:'药品柜里找到的工作证：<br>姓名：张某某<br>职位：主治医师<br>单位：深巷密室逃脱店（兼职医务）<br><br>照片上的男人，和画之房间里半张照片上的是同一个人！<br>他不是医生。他只是一个兼职的。他甚至没有行医资格。'},
+  phone_call:{t:'电话里的声音',x:'你接起电话。里面是一段录音：<br>"喂？急救中心吗？我姐姐在密室里晕倒了！她有心脏病！"<br>"女士请冷静，您的地址是哪里？"<br>"深巷密室逃脱店！快来！"<br>"好的，救护车已经出发。请您不要挂断，我们指导您做心肺复苏。"<br>"我……我不会……"<br>"没关系，我教您。首先，把她平放在地上……"<br>录音到这里断了。'},
+  phone_poem:{t:'电话亭上的诗',x:'电话亭的玻璃上，有人用记号笔写了一行字：<br>"生如夏花之绚烂，死如秋叶之静美。"<br>下面还有一行小字："泰戈尔，1861-1941。她最喜欢这句诗。"'},
+  phone_tape:{t:'神秘电话录音',x:'储物格里找到一盒录音带，标签上写着"2020.7.15 15:30"。<br>你找到一台旧录音机播放——<br>这是那通急救电话的后半段。<br>最开始是林夏的声音在哭，然后电话被另一个人接了过去。<br>是林曦的声音，她很虚弱，但很清醒。<br>她告诉了急救中心准确的地址。<br>她甚至在指导电话那头的人做心肺复苏："按压胸骨下半段，每分钟100到120次……"<br>但电话那头的人，只是在哭，说"我不会……我害怕……"<br>录音最后，林曦说："没关系……谢谢你……告诉林夏……我爱她……"<br>然后是漫长的沉默。'},
+  email_sister:{t:'???的邮件（二周目）',x:'发件人：???<br>日期：未知<br><br>"姐姐，如果你看到这封邮件，说明你恢复了一些记忆。<br>2020年的事，不是你的错。<br>你不用自责。<br>但我需要你走完这一切。<br>——林夏"'},
+  r4_morse:{t:'摩斯密码',x:'玻璃对面的人抬起左手，用指关节敲击玻璃。<br>你辨认出这是摩斯密码：<br>· — —（B） · — ·（U） · · ·（S） · · ·（S）<br>翻译过来就是："BUZZ"……不对，是中文拼音？<br>"不要按"——bu yao an。<br>对面的人在警告你：不要按红色按钮。'},
+  r4_pills:{t:'药丸后的幻象',x:'你服下红蓝药丸后，眼前一阵眩晕。<br>假人的胸口浮现出一行血字："她在你身后。"<br>你猛地回头，看到一个穿着和你一模一样衣服的人影，站在门口。<br>你再眨眼，人影消失了。<br>是幻觉……还是真的有人？'},
+  dorm_diary:{t:'宿舍日记',x:'你用小铜钥匙打开日记本，里面是林夏的字迹：<br><br><strong>2025.3.1</strong>：他们让我筛选新的实验体。我拒绝了。他们说如果我不配合，就把姐姐也抓进来。<br><br><strong>2025.4.15</strong>：我开始暗中收集证据。U盘里存了所有视频。我要把这一切曝光。<br><br><strong>2025.5.20</strong>：她和我长得一模一样，但她不是我。<br>姐姐，如果你看到这本日记，不要相信你看到的任何东西。<br>包括"我"。'},
+  dorm_photo:{t:'宿舍墙上的照片',x:'墙上贴着一张照片——两个长得一模一样的女孩，在游乐园门口笑得很开心。<br>背面写着："林曦&林夏，2019年夏天。"<br>林曦是谁？为什么你从来没听林夏提过她有个姐姐？'},
+  dark_marks:{t:'墙上的7道刻痕',x:'打火机的光照亮了墙壁。上面有7道深深的刻痕，每道旁边都刻着一个名字和日期：<br>1. 王浩 2024.11.3<br>2. 陈雪 2024.12.20<br>3. 孙磊 2025.1.15<br>4. 刘芳 2025.2.8<br>5. 张磊 2025.3.1<br>6. 赵婷 2025.3.22<br>7. <span style="color:var(--red)">林夏</span> 日期空着<br>第7道刻痕旁边有一行小字："她是最完美的样本。"'},
+  dark_voice:{t:'黑暗中的声音',x:'打火机突然熄灭了。<br>在完全的黑暗中，你耳边传来一个熟悉的声音——是林夏的声音，带着哭腔：<br>"别往前走了。求你。"<br>你伸手去摸，什么都没有。<br>是幻觉，还是她真的在这里？'},
+  archive_linxia:{t:'林夏的档案',x:'<strong>实验体007 · 林夏</strong><br><br>心理测评：极度共情型。<br>第四关结果：未按按钮（水位到达腰部）。<br>评定：高价值样本，可培养为继承人。<br><br><span style="color:var(--red)">备注：该实验体有一个双胞胎姐姐。根据背景调查，姐姐性格与林夏截然不同，可能成为下一批实验体的理想人选。已安排接触。</span>'},
+  archive_designer:{t:'"导师"档案',x:'<strong>代号：导师</strong><br><br>真实姓名：<span style="color:var(--red)">被涂黑</span><br>身份：深渊回廊创建者/总设计者<br>背景：2020年"深巷"密室意外身亡者的妹妹。<br>创建目的：<span style="color:var(--gold)">筛选人类。在极端环境下，测试人是否会为了自保而牺牲他人。通过测试者招募为"筛选者"，失败者……被处理。</span><br>备注：该人员具有极高的智商和反社会倾向。对姐姐的死有强烈的负罪感和复仇心理。'},
+  archive_003:{t:'003号实验体档案',x:'<strong>实验体003 · 赵婷</strong><br><br>第四关结果：未按按钮。<br>第五关选择：打开出口大门（逃跑）。<br>目前状态：<span style="color:var(--green)">"已释放，持续监控中"</span>。<br><br>备注：该实验体在离开后曾试图联系警方，但因缺乏证据未果。目前居住在城市东区，定期收到"提醒"短信。'},
+  corr_hint:{t:'走廊门上的数字',x:'漫长的地下走廊两侧，是一扇扇紧闭的铁门。<br>每扇门上都有编号：B-08、B-07、A-12、C-03……<br>走廊最尽头的门，没有编号，只有一个密码锁。<br>门上方用喷漆写着三个数字："007"。<br>这是林夏的编号。'},
+  r5_video:{t:'U盘里的视频',x:'你把U盘插进电脑，弹出一个视频文件，名字叫"给姐姐"。<br><br>视频里是林夏，坐在纯白的房间里，头发很乱，眼睛红肿，但表情很平静。<br><br>"如果你看到这个视频，说明你走到了第五关。对不起，我骗了你。我不是失踪了，我是自愿进来的。"<br>"我查到了一些东西——这个密室是一个<strong>筛选装置</strong>。设计者在筛选两种人：\'绝对服从\'的和\'绝对自私\'的。"<br>"第四关的按钮，就是筛选器。按了的人是\'可操控的\'，没按的人是\'有价值的\'。"<br>"我没有按。所以他们让我成为了\'筛选者\'。但我不想变成那样。我在找证据，想把这一切曝光。然后我被发现了。视频到这里……"<br><br>视频突然中断，屏幕花了一下："剩余内容需要密码。"'},
+  mentor_wall:{t:'导师的线索墙',x:'你走进导师的私人房间。墙上贴满了照片，用红线连接着，像一张巨大的蜘蛛网。<br>每张照片下面都有编号和评语：<br>001 王浩——"暴力型，已处理"<br>002 陈雪——"服从型，已招募"<br>003 赵婷——"共情型，已释放，监控中"<br>……<br>007 林夏——"完美样本，继承人"<br><br>而在所有照片的最中心，是<span style="color:var(--red)">你的照片</span>，上面写着：<br><strong>"008 · 待激活"</strong>'},
+  mentor_otherhalf:{t:'书桌里的另一半照片',x:'你在书桌抽屉里找到了另一半照片。<br>拼上去之后，是一个女人的正脸——<br><span style="color:var(--red)">和你长得一模一样。</span><br>照片背面写着："林曦，2020年夏天，最后一张照片。"'},
+  mentor_notebook:{t:'设计者的笔记本',x:'你翻开笔记本，里面记录了所有实验体的数据：<br>每个人的心理测评、每一关的表现、最终的评定结果。<br>字迹工整得像机器打印的。<br><br>翻到最后一页，只有几行字：<br>"下一个实验体是她的姐姐。<br>她会来的。我知道她会来。<br>因为她和我一样——<br>都想知道真相。<br>而真相，会毁掉她。"'},
+  memory_all:{t:'恢复的记忆',x:'所有的记忆像潮水一样涌回来——<br><br>2020年7月15日，你带大姐林曦去"深巷"密室逃脱店玩。她有先天性心脏病，但她说下周就要做手术了，想最后体验一次。三妹林夏也在，但她在另一个房间。<br>在第三个房间里，林曦突然捂住胸口倒了下去。你拼命拍门喊人，然后跑出去叫救护车。等你回来的时候，她已经走了。医生说，如果早五分钟，也许还能救回来。但密室里的其他玩家，没有一个人停下来帮她。林夏后来说，她当时听到了姐姐在拍门，但她害怕，没有去开门。<br><br>你因此崩溃，在医院住了半年。出院后，林夏给你注射了记忆抑制剂——你忘了林曦，忘了密室，忘了那天发生的一切，甚至忘了你们是姐妹。你以为自己只是"来找好友林夏的人"。<br><br>但林夏没有忘。她花了五年时间，建了这座深渊回廊。她要测试——人在极端环境下，会不会选择帮助别人。<br><br>而你，是她的第008号实验体。<br>她想知道——如果是你，在第四关，会不会按那个按钮。'}
+};
+
+// ==================== 状态 ====================
+let G = {room:'start-screen',inv:[],clues:[],ngp:false,flags:{}};
+
+// ==================== 音效系统（Web Audio API） ====================
+let audioCtx=null;
+function initAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}}
+function playTone(freq,dur,type='sine',vol=0.15){
+  if(!audioCtx||muted)return;
+  try{
+    const o=audioCtx.createOscillator();const g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+    o.connect(g);g.connect(audioCtx.destination);
+    o.start();o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+function sfxClick(){initAudio();playTone(800,0.06,'square',0.08)}
+function sfxType(){initAudio();playTone(1200,0.02,'square',0.03)}
+function sfxSuccess(){initAudio();playTone(523,0.12,'sine',0.12);setTimeout(()=>playTone(659,0.12,'sine',0.12),100);setTimeout(()=>playTone(784,0.2,'sine',0.12),200)}
+function sfxError(){initAudio();playTone(200,0.2,'sawtooth',0.1);setTimeout(()=>playTone(150,0.3,'sawtooth',0.1),150)}
+function sfxDoor(){initAudio();playTone(80,0.5,'sine',0.2);setTimeout(()=>playTone(60,0.6,'sine',0.15),200)}
+function sfxHeartbeat(){initAudio();playTone(60,0.15,'sine',0.25);setTimeout(()=>playTone(50,0.2,'sine',0.2),200)}
+let heartbeatInterval=null;
+function startHeartbeat(){if(heartbeatInterval)return;heartbeatInterval=setInterval(sfxHeartbeat,1000)}
+function stopHeartbeat(){if(heartbeatInterval){clearInterval(heartbeatInterval);heartbeatInterval=null}}
+
+// ==================== 背景音乐系统（Web Audio API 实时生成） ====================
+let bgmNodes={osc1:null,osc2:null,filter:null,gain:null,lfo:null,started:false};
+let ambientInterval=null;
+function startBGM(){
+  if(!audioCtx)initAudio();
+  if(bgmNodes.started)return;
+  try{
+    const ctx=audioCtx;
+    // 主增益
+    bgmNodes.gain=ctx.createGain();
+    bgmNodes.gain.gain.value=0;
+    bgmNodes.gain.connect(ctx.destination);
+    // 低通滤波器
+    bgmNodes.filter=ctx.createBiquadFilter();
+    bgmNodes.filter.type='lowpass';
+    bgmNodes.filter.frequency.value=200;
+    bgmNodes.filter.Q.value=2;
+    bgmNodes.filter.connect(bgmNodes.gain);
+    // 两个失谐的低频振荡器（drone效果）
+    bgmNodes.osc1=ctx.createOscillator();
+    bgmNodes.osc1.type='sine';
+    bgmNodes.osc1.frequency.value=55; // A1
+    bgmNodes.osc1.connect(bgmNodes.filter);
+    bgmNodes.osc2=ctx.createOscillator();
+    bgmNodes.osc2.type='sine';
+    bgmNodes.osc2.frequency.value=55.5; // 稍微失谐
+    bgmNodes.osc2.connect(bgmNodes.filter);
+    // LFO控制音量缓慢呼吸
+    bgmNodes.lfo=ctx.createOscillator();
+    bgmNodes.lfo.type='sine';
+    bgmNodes.lfo.frequency.value=0.1; // 10秒一个周期
+    const lfoGain=ctx.createGain();
+    lfoGain.gain.value=0.04;
+    bgmNodes.lfo.connect(lfoGain);
+    lfoGain.connect(bgmNodes.gain.gain);
+    // 启动
+    bgmNodes.osc1.start();
+    bgmNodes.osc2.start();
+    bgmNodes.lfo.start();
+    bgmNodes.gain.gain.linearRampToValueAtTime(0.06,ctx.currentTime+3);
+    bgmNodes.started=true;
+    // 随机环境音
+    ambientInterval=setInterval(()=>{
+      if(Math.random()<0.3){
+        const freq=200+Math.random()*800;
+        playTone(freq,0.3+Math.random()*0.5,'sine',0.02+Math.random()*0.02);
+      }
+      if(Math.random()<0.15){
+        // 金属声
+        playTone(1200+Math.random()*600,0.1,'triangle',0.03);
+        setTimeout(()=>playTone(800+Math.random()*400,0.15,'triangle',0.02),80);
+      }
+    },4000);
+  }catch(e){}
+}
+function stopBGM(){
+  if(!bgmNodes.started)return;
+  try{
+    bgmNodes.gain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+1);
+    setTimeout(()=>{
+      try{bgmNodes.osc1.stop();bgmNodes.osc2.stop();bgmNodes.lfo.stop()}catch(e){}
+      bgmNodes.started=false;
+    },1200);
+  }catch(e){}
+  if(ambientInterval){clearInterval(ambientInterval);ambientInterval=null}
+}
+function setBGMTense(tense){
+  if(!bgmNodes.started||!bgmNodes.filter)return;
+  try{
+    const target=tense?400:200;
+    bgmNodes.filter.frequency.linearRampToValueAtTime(target,audioCtx.currentTime+1);
+  }catch(e){}
+}
+
+// 静音切换
+let muted=false;
+function toggleMute(){
+  muted=!muted;
+  const btn=$('mute-btn');
+  if(muted){
+    btn.textContent='🔇 静音';
+    stopBGM();stopHeartbeat();
+  }else{
+    btn.textContent='🔊 音效';
+    if(G.room!=='start-screen'){startBGM();const tenseRooms=['darkroom','morgue','surgery','room4','phonebooth','confessional'];if(tenseRooms.includes(G.room)){startHeartbeat();setBGMTense(true)}}
+  }
+}
+
+// ==================== 氛围效果 ====================
+// 屏幕随机闪烁
+function screenFlicker(){
+  const f=$('flicker');if(!f)return;
+  if(Math.random()<0.02){
+    f.style.background='rgba(255,255,255,0.06)';
+    setTimeout(()=>{f.style.background='rgba(255,255,255,0)'},50);
+    setTimeout(()=>{if(Math.random()<0.3){f.style.background='rgba(255,255,255,0.04)';setTimeout(()=>{f.style.background='rgba(255,255,255,0)'},30)}},100);
+  }
+}
+setInterval(screenFlicker,100);
+
+// 鼠标视差效果
+document.addEventListener('mousemove',e=>{
+  const bg=$('bg-layer');if(!bg)return;
+  const x=(e.clientX/window.innerWidth-0.5)*15;
+  const y=(e.clientY/window.innerHeight-0.5)*15;
+  bg.style.transform=`scale(1.05) translate(${x}px,${y}px)`;
+});
+
+// 给所有按钮加点击音效
+document.addEventListener('click',e=>{
+  if(e.target.closest('.btn')||e.target.closest('.clue-title')||e.target.closest('.inv-label')||e.target.closest('#status-bar span')){
+    sfxClick();
+  }
+});
+
+const $=id=>document.getElementById(id);
+const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);if(m.includes('错误')||m.includes('不对'))sfxError()};
+const addItem=id=>{if(!G.inv.includes(id)){G.inv.push(id);renderInv();toast('获得：'+ITEMS[id].n);sfxSuccess();save()}};
+const addClue=id=>{if(!G.clues.includes(id)){G.clues.push(id);$('clue-count').textContent=G.clues.length;toast('新线索：'+CLUES[id].t);sfxSuccess();save()}};
+const has=id=>G.inv.includes(id);
+const setF=(k,v=true)=>{G.flags[k]=v;save()};
+const getF=k=>!!G.flags[k];
+const ap=(id,h)=>{$(id+'-content').innerHTML+=h};
+const sc=(id,h)=>{$(id+'-content').innerHTML=h};
+
+function renderInv(){
+  const b=$('inv-slots');b.innerHTML='';
+  if(!G.inv.length){b.innerHTML='<span class="small" style="color:var(--text-dim)">（空）</span>';return}
+  G.inv.forEach(id=>{
+    const it=ITEMS[id],s=document.createElement('div');s.className='inv-slot';
+    s.innerHTML=it.i+'<div class="tip"><strong>'+it.n+'</strong><br>'+it.d+'<br><span style="color:var(--text-dim)">点击使用</span></div>';
+    s.onclick=()=>useItem(id);b.appendChild(s);
+  });
+}
+
+function useItem(id){
+  const r=G.room,m={
+    room3:{oldKey:()=>r3_drawer()},
+    textroom:{recorder:()=>text_recorder()},room4:{pills:()=>r4_pills()},
+    darkroom:{lighter:()=>dark_light()},dorm:{diaryKey:()=>dorm_diary()},
+    archiveroom:{employeeCard:()=>archive_card()},
+    room5:{usb:()=>r5_usb(),battery:()=>r5_battery(),abyssKey:()=>r5_mentorDoor()},
+    'mentor-room':{halfPhoto:()=>mentor_photo()}
+  };
+  if(m[r]&&m[r][id])m[r][id]();
+  else toast('这里暂时用不上'+ITEMS[id].n);
+}
+
+// 打字机
+function type(elId,text,sp=18){
+  const el=$(elId);el.innerHTML='';let i=0;
+  (function t(){if(i<text.length){el.innerHTML=text.substring(0,i+1)+'<span class="cursor"></span>';if(i%3===0)sfxType();i++;setTimeout(t,sp)}else el.innerHTML=text})();
+}
+
+// 故障文字效果：先乱码，再逐字变成正确文字
+function glitchType(elId,text,sp=25){
+  const el=$(elId);el.innerHTML='';
+  const chars='!@#$%^&*()_+-=[]{}|;:,.<>?/~`ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let revealed=0;
+  const total=text.length;
+  // 先显示全乱码
+  let scramble='';
+  for(let i=0;i<total;i++)scramble+=chars[Math.floor(Math.random()*chars.length)];
+  el.innerHTML='<span class="glitch-text" data-text="'+scramble.replace(/"/g,'&quot;')+'">'+scramble+'</span><span class="cursor"></span>';
+  sfxError();
+  // 逐字解密
+  const interval=setInterval(()=>{
+    if(revealed>=total){clearInterval(interval);el.innerHTML=text;return}
+    revealed++;
+    let display='';
+    for(let i=0;i<total;i++){
+      if(i<revealed)display+=text[i];
+      else display+=chars[Math.floor(Math.random()*chars.length)];
+    }
+    el.innerHTML='<span class="glitch-text" data-text="'+display.replace(/"/g,'&quot;')+'">'+display+'</span><span class="cursor"></span>';
+    if(revealed%2===0)sfxType();
+  },sp);
+}
+
+// 房间切换
+function goTo(roomId){
+  sfxDoor();
+  // 场景切换闪烁
+  const f=$('flicker');if(f){f.style.background='rgba(0,0,0,0.6)';setTimeout(()=>{f.style.background='rgba(255,255,255,0)'},150)}
+  document.querySelectorAll('.room').forEach(r=>r.classList.remove('active'));
+  $(roomId).classList.add('active');G.room=roomId;
+  $('room-indicator').textContent=RN[roomId]||roomId;
+  const bg=BG[roomId];
+  if(bg){$('bg-layer').style.backgroundImage='url('+bg+')';$('bg-layer').style.filter='brightness(0.45) saturate(0.85)'}
+  else{$('bg-layer').style.backgroundImage='none';$('bg-layer').style.background='#000'}
+  // 心跳声控制：紧张房间播放心跳
+  const tenseRooms=['darkroom','morgue','surgery','room4','phonebooth','confessional'];
+  if(tenseRooms.includes(roomId)){startHeartbeat();setBGMTense(true)}else{stopHeartbeat();setBGMTense(false)}
+  // 特定房间视觉效果
+  document.body.className=document.body.className.replace(/room-\w+/g,'');
+  const roomStyles={'darkroom':'room-dark','morgue':'room-morgue','surgery':'room-surgery','confessional':'room-church','room4':'room-choice','phonebooth':'room-phone','library':'room-library','courtroom':'room-court'};
+  if(roomStyles[roomId])document.body.classList.add(roomStyles[roomId]);
+  window.scrollTo(0,0);save();onEnter(roomId);
+}
+
+function onEnter(r){
+  if(r==='timeroom'&&!getF('time_solved'))startTimeCD();
+  if(r==='room4'&&!getF('r4_solved'))startR4CD();
+  if(r==='room1'&&!getF('r1_entered')){
+    setF('r1_entered',true);
+    $('r1-scene').innerHTML='正方形的房间，四面墙全是镜子，从地板到天花板没有一丝缝隙。你站在中央，能看到无数个自己。房间正中央有一个大理石台座，上面放着一把黄铜钥匙。墙上用红色油漆写着："看清自己，才能离开。"';
+  }
+  if(r==='room2'&&!getF('r2_entered')){
+    setF('r2_entered',true);
+    $('r2-scene').innerHTML='一片漆黑。门关上后，连门缝的光都消失了。你什么都看不见。房间中央，一盏红色小灯亮了起来，照亮了一台老式收音机。墙上四个按钮发着微弱的绿光：信任、怀疑、服从、反抗。';
+  }
+  if(r==='elevator'&&!getF('elev_entered')){
+    setF('elev_entered',true);
+    $('elev-scene').innerHTML='门在你身后关上。这是一个老旧的电梯，金属墙壁斑驳生锈，天花板上的日光灯在摇晃。楼层按钮面板上只有三个按钮：B1、B2、B3，全都亮着红灯。电梯正在下降。';
+  }
+  if(r==='room3'&&!getF('r3_entered')){
+    setF('r3_entered',true);
+    $('r3-scene').innerHTML='暖黄色的灯光，像一个美术馆展厅。四面墙上各挂着一幅画。房间中央有一个圆形底座，上方的空气微微扭曲。广播响起："你收到过一条短信。林夏说，第三间房的画是假的。她没有骗你。"';
+  }
+  if(r==='emailroom'){
+    if(!getF('email_entered')){
+      setF('email_entered',true);
+      type('email-scene','你走进一个房间。中央是一张桌子，上面放着一台老旧的电脑，屏幕亮着，显示着一个内部邮件系统的登录界面。房间里有打印机、文件柜，墙上贴着"保密协议"和"监控区域"的标识。空气中有旧电器发热和纸张的味道。',16);
+    }else if(!$('email-scene').innerHTML){
+      $('email-scene').innerHTML='你走进一个房间。中央是一张桌子，上面放着一台老旧的电脑，屏幕亮着，显示着一个内部邮件系统的登录界面。房间里有打印机、文件柜，墙上贴着"保密协议"和"监控区域"的标识。空气中有旧电器发热和纸张的味道。';
+    }
+  }
+  if(r==='darkroom'&&has('lighter')){$('dark-light-btn').classList.remove('hidden');$('dark-nolight-btn').classList.add('hidden')}
+  if(r==='archiveroom'&&has('employeeCard'))$('archive-card-btn').classList.remove('hidden');
+  if(r==='room5'){
+    if(has('usb'))$('r5-usb-btn').classList.remove('hidden');
+    if(has('battery'))$('r5-bat-btn').classList.remove('hidden');
+    if(G.ngp&&has('abyssKey'))$('r5-ngp-btn').classList.remove('hidden');
+  }
+  if(r==='mentor-room'&&has('halfPhoto'))$('mentor-photo-btn').classList.remove('hidden');
+}
+
+// 存档
+function save(){try{localStorage.setItem('abyss_v3',JSON.stringify(G))}catch(e){}}
+function saveGame(){save();toast('游戏进度已保存')}
+function load(){try{const s=localStorage.getItem('abyss_v3');if(s){G=JSON.parse(s);return true}}catch(e){}return false}
+function restart(){try{localStorage.removeItem('abyss_v3')}catch(e){}location.reload()}
+
+// 检查是否通关过（解锁二周目）
+function hasCleared(){try{return localStorage.getItem('abyss_cleared')==='1'}catch(e){return false}}
+
+window.onload=function(){
+  renderInv();
+  if(load()&&G.room!=='start-screen'){
+    $('continue-area').innerHTML='<button class="btn" onclick="cont()">继续上次进度（'+RN[G.room]+'）</button>';
+  }
+  if(hasCleared()){
+    $('ngp-area').innerHTML='<button class="ngp-btn" onclick="startGame(true)">🔮 进入二周目（新游戏+）</button>';
+  }
+};
+
+function startGame(ngp){
+  initAudio();
+  startBGM();
+  G.ngp=ngp;if(ngp){G.inv=['abyssKey'];$('ngp-badge').classList.remove('hidden')}
+  save();
+  type('intro-scene','铁门在你身后缓缓关上，发出沉闷的"咔哒"声。这是一个不到十平米的等候区，墙皮剥落，日光灯忽明忽暗。房间中央有一张旧桌子，桌上放着皮面笔记本、一支笔和一个落满灰尘的烟灰缸。墙上贴着一张塑封的《玩家须知》。'+(ngp?'（二周目：你有一种奇怪的感觉，好像这一切你都经历过……）':''),16);
+  goTo('room-intro');
+}
+
+function cont(){
+  goTo(G.room);$('clue-count').textContent=G.clues.length;
+  if(G.ngp)$('ngp-badge').classList.remove('hidden');
+  restoreUI();
+}
+
+function restoreUI(){
+  const f=G.flags;
+  if(f.intro_done)$('intro-next').classList.remove('hidden');
+  if(f.r1_solved){$('r1-pwbox').classList.add('hidden');$('r1-next').classList.remove('hidden')}
+  if(f.r1_mirrors&&!f.r1_solved){
+    if(f.r1_key){} // 钥匙已拿
+  }
+  if(f.r2_solved)$('r2-next').classList.remove('hidden');
+  if(f.r2_pressed&&!f.r2_solved){
+    // 坏结局状态，重新开始按钮会在r2-content中
+  }
+  if(f.elev_solved)$('elev-next').classList.remove('hidden');
+  if(f.time_solved){$('time-pwbox').classList.add('hidden');$('time-next').classList.remove('hidden')}
+  if(f.time_clock&&!f.time_solved)$('time-pwbox').classList.remove('hidden');
+  if(f.r3_solved)$('r3-next').classList.remove('hidden');
+  if(f.r3_clock&&!f.r3_solved){
+    $('r3-clock-btn').classList.add('hidden');
+    $('r3-place-btn').classList.remove('hidden');
+    if(has('oldKey')&&!f.r3_drawer)$('r3-drawer-btn').classList.remove('hidden');
+  }
+  if(f.text_solved)$('text-next').classList.remove('hidden');
+  if(f.text_red&&!f.text_solved){
+    $('text-pwbox').classList.remove('hidden');
+    if(has('recorder')&&!f.text_recorder)$('text-rec-btn').classList.remove('hidden');
+  }
+  if(f.email_solved)$('email-next').classList.remove('hidden');
+  if(f.email_all&&!f.email_solved)$('email-pwbox').classList.remove('hidden');
+  if(f.conf_solved){$('conf-next').classList.remove('hidden')}
+  if(f.conf_lock1){$('conf-pwbox1').classList.add('hidden');$('conf-painting-btn').classList.remove('hidden')}
+  if(f.conf_lock2){$('conf-pwbox2').classList.add('hidden')}
+  if(f.lib_solved){$('lib-next').classList.remove('hidden')}
+  if(f.lib_lock){$('lib-pwbox').classList.add('hidden')}
+  if(f.lib_bible)$('lib-bible-btn').classList.remove('hidden');
+  if(f.lib_philo)$('lib-philo-btn').classList.remove('hidden');
+  if(f.court_solved){$('court-next').classList.remove('hidden')}
+  if(f.court_choices_shown){$('court-choice1').classList.add('hidden');$('court-choice2').classList.add('hidden');$('court-choice3').classList.add('hidden')}
+  if(f.r4_solved){
+    $('r4-cd').classList.add('hidden');
+    $('r4-press-btn').disabled=true;
+    $('r4-dark-btn').classList.remove('hidden');$('r4-skip-btn').classList.remove('hidden');
+  }
+  if(f.dorm_done){$('dorm-dark-btn').classList.remove('hidden');$('dorm-morgue-btn').classList.remove('hidden');$('dorm-next').classList.remove('hidden')}
+  if(f.dark_solved){$('dark-surgery-btn').classList.remove('hidden');$('dark-next').classList.remove('hidden')}
+  if(f.dark_lit&&!f.dark_solved){
+    $('dark-light-btn').classList.add('hidden');
+    $('dark-explore').classList.remove('hidden');
+    if(f.dark_marks&&!f.dark_solved)$('dark-box-btn').classList.remove('hidden');
+  }
+  if(f.morgue_solved)$('morgue-next').classList.remove('hidden');
+  if(f.morgue_lock){$('morgue-pwbox').classList.add('hidden')}
+  if(f.morgue_cabinet&&!f.morgue_solved)$('morgue-pwbox').classList.remove('hidden');
+  if(f.morgue_book)$('morgue-book-btn').classList.remove('hidden');
+  if(f.surgery_solved)$('surgery-next').classList.remove('hidden');
+  if(f.surgery_lock){$('surgery-pwbox').classList.add('hidden')}
+  if(f.surgery_chart&&!f.surgery_solved)$('surgery-pwbox').classList.remove('hidden');
+  if(f.archive_solved){$('archive-phone-btn').classList.remove('hidden');$('archive-next').classList.remove('hidden')}
+  if(f.archive_card&&!f.archive_solved){
+    $('archive-lx-btn').classList.remove('hidden');
+    $('archive-ds-btn').classList.remove('hidden');
+    $('archive-003-btn').classList.remove('hidden');
+  }
+  if(f.phone_solved)$('phone-next').classList.remove('hidden');
+  if(f.phone_lock){$('phone-pwbox').classList.add('hidden')}
+  if(f.phone_dial&&!f.phone_solved)$('phone-pwbox').classList.remove('hidden');
+  if(f.phone_answer)$('phone-answer-btn').classList.remove('hidden');
+  if(f.phone_dial)$('phone-dial-btn').classList.remove('hidden');
+  if(f.corr_solved)$('corr-next').classList.remove('hidden');
+  if(f.corr_final&&!f.corr_solved)$('corr-pwbox').classList.remove('hidden');
+  if(f.r5_usb)$('r5-choice').classList.remove('hidden');
+}
+
+// 线索面板
+function showClues(){
+  const l=$('clues-list');
+  if(!G.clues.length)l.innerHTML='<p class="center" style="color:var(--text-dim);padding:40px">还没有收集到任何线索。</p>';
+  else l.innerHTML=G.clues.map((id,i)=>{
+    const c=CLUES[id];
+    return '<div class="clue-accordion" id="clue-acc-'+i+'">'
+      +'<div class="clue-title" onclick="toggleClue('+i+')">'
+      +'<span class="clue-icon">📋</span><span class="clue-name">'+c.t+'</span>'
+      +'<span class="clue-arrow" id="clue-arrow-'+i+'">▶</span></div>'
+      +'<div class="clue-detail hidden" id="clue-detail-'+i+'">'+c.x+'</div></div>';
+  }).join('');
+  document.querySelectorAll('.room').forEach(r=>r.classList.remove('active'));
+  $('clues-panel').classList.add('active');
+}
+function toggleClue(i){
+  const d=$('clue-detail-'+i);
+  const a=$('clue-arrow-'+i);
+  if(d.classList.contains('hidden')){
+    d.classList.remove('hidden');a.textContent='▼';
+  }else{
+    d.classList.add('hidden');a.textContent='▶';
+  }
+}
+function closeClues(){goTo(G.room)}
+
+// 标记通关
+function markCleared(){try{localStorage.setItem('abyss_cleared','1')}catch(e){}}
+
+// ==================== 序章 ====================
+function readRules(){
+  sc('intro','<div class="clue-card"><strong>《深渊回廊 · 玩家须知》</strong><br>1. 本游戏共20个房间，可能会有奇遇到神奇的房间，通关者可获得奖金50万元并安全离开。<br>2. 每个房间有且仅有一个正确解法。暴力破坏设施者视为放弃资格。<br>3. 游戏中可能产生恐惧、焦虑，属正常体验。如有不适请呼喊"放弃"。<br><span class="warn">4. 失败者……将成为房间的一部分。</span><br>5. 最终解释权归本店所有。<br><br><span class="small">第4条字迹和其他不同，像是后来用记号笔补上去的。</span></div>');
+  addClue('rules');checkIntro();
+}
+function readNotebook(){
+  sc('intro','<div class="clue-card"><strong>前玩家的笔记本</strong><br><br><strong>第1页</strong>：2025.3.10。我们五个人约好来玩。听说全市只有3个人通关过。<br><br><strong>第2页</strong>：2025.3.14。第二关的收音机太吓人了。陈雪哭了说想走，但门打不开。<br><br><strong>第3页</strong>：第三关。孙磊把画砸了，然后他就不见了。广播说"暴力破坏者，已处理"。<br><br><strong>第4页</strong>：第四关。他们让我选。我没按。他们三个都按了。但玻璃升起来的时候，对面是个假人。<br><br><strong>第5页</strong>（只有四个字）：<span class="warn">"不要相信。"</span></div>');
+  addClue('notebook');checkIntro();
+}
+function checkAshtray(){
+  sc('intro','<div class="clue-card">你拿起那半截烟。烟嘴上的暗红色口红印——和林夏常用的色号一模一样。凑近闻了闻，还残留着一丝极淡的、属于她的香水味。<br><br><span class="warn">她确实来过这里。而且，坐在这里等过。</span></div>');
+  addClue('cigarette');checkIntro();
+}
+function intro_lookAround(){
+  sc('intro','<div class="scene-card">你环顾四周。等候区的墙壁上有很多划痕，像是有人用指甲或者钥匙刻出来的。大部分已经模糊不清了，但最新的一道划痕旁边，有人用极小的字写着：<br><br><span class="warn">"她在骗你。"</span><br><br>你不知道"她"是谁。也许是林夏，也许是别的什么人。<br><br>你低头看了看桌底——有一张被人丢弃的旧门禁卡，捡起来一看，卡片已经失效了，但背面用记号笔写着一行6位数字：<br><strong style="font-size:20px;color:var(--gold);letter-spacing:4px">250314</strong><br><br>你不知道这串数字有什么用，但你把它记在了心里。</div>');
+  addClue('intro_wall');checkIntro();
+}
+function checkIntro(){
+  if(!getF('intro_done')){
+    setF('intro_done',true);
+    setTimeout(()=>{
+      ap('intro','<div class="broadcast mt-20">欢迎来到深渊回廊。我知道你是谁，也知道你为什么来。你在找林夏。她在这里——或者说，她的一部分在这里。第一关，找到你自己。</div><p class="center small mt-20">日光灯闪烁后，面前的墙裂开了一道门缝，透出冷白色的光。</p>');
+      $('intro-next').classList.remove('hidden');addClue('sms');
+    },1500);
+  }
+}
+
+// ==================== 第一关 ====================
+function r1_takeKey(){
+  if(getF('r1_key'))return;setF('r1_key',true);
+  sc('r1','<div class="scene-card">你伸手拿起钥匙——瞬间，所有镜子里的"你"都停住了。只有你在动，镜子里的人影保持着伸手的姿势。然后，它们同时转过头来，盯着你。</div><div class="broadcast">那不是钥匙。那是诱饵。上一个拿起它的人，花了三个小时才发现，自己一直在对着镜子说话。</div><p class="small center">你低头看手里的钥匙——它变成了一面小镜子。你把它放回台座，人影恢复正常。</p>');
+}
+function r1_mirrors(){
+  if(getF('r1_mirrors'))return;setF('r1_mirrors',true);
+  type('r1-scene','正方形的房间，四面墙全是镜子，从地板到天花板没有一丝缝隙。你站在中央，能看到无数个自己。房间正中央有一个大理石台座，上面放着一把黄铜钥匙。墙上用红色油漆写着："看清自己，才能离开。"',16);
+  sc('r1','<div class="clue-card">你逐面观察：<br><br><strong>第一面</strong>：正常的你，动作同步。<br><strong>第二面</strong>：正常，但镜子里的你左手腕有一道伤疤——你现实中并没有。<br><strong>第三面</strong>：你举手，镜子里的你<strong>慢了半拍</strong>。它在模仿你，但永远跟不上。<br><strong>第四面</strong>：镜子里的房间是空的，没有你。但凑近看，镜子深处似乎有一个模糊的人影站在你身后。你猛地回头——什么都没有。</div>');
+  setTimeout(()=>ap('r1','<p class="center mt-20">你凑近第三面镜子，在右下角镜框接缝处发现了一个<strong>几乎和镜框融为一体的圆形按钮</strong>。</p><div class="center mt-20"><button class="btn primary" onclick="r1_pressBtn()">按下按钮</button></div>'),2000);
+}
+function r1_pressBtn(){
+  sc('r1','<div class="scene-card">你按下按钮。镜子"嗡"地一声滑开，露出后面的暗格。暗格里有一个<strong>6位数字密码锁</strong>，和一个<strong>打火机</strong>。</div><div class="broadcast">不错。你找到了。大多数人只会对着镜子发呆，或者砸镜子。但你还需要密码——密码就在你来的地方。</div>');
+  addItem('lighter');$('r1-pwbox').classList.remove('hidden');
+}
+function r1_submit(){
+  if($('r1-pw').value==='250314'){
+    setF('r1_solved',true);
+    sc('r1','<div class="clue-card">密码正确！锁"咔哒"打开，暗格下方的地板滑开，露出通道。<br>你注意到滑开的镜子背面，用红色口红写着一行小字：<br><span class="warn">"第二关，别听它的。"</span>——是林夏的字迹。</div>');
+    addClue('r1_lipstick');$('r1-pwbox').classList.add('hidden');$('r1-next').classList.remove('hidden');
+  }else{toast('密码错误。想想你在等候区桌底捡到的门禁卡，背面写着什么？');$('r1-pw').value=''}
+}
+
+// ==================== 第二关 ====================
+function r2_radio(){
+  if(getF('r2_radio'))return;setF('r2_radio',true);
+  type('r2-scene','一片漆黑。门关上后，连门缝的光都消失了。你什么都看不见。房间中央，一盏红色小灯亮了起来，照亮了一台老式收音机。墙上四个按钮发着微弱的绿光：信任、怀疑、服从、反抗。',16);
+  sc('r2','<div class="broadcast">"你好，玩家。我是上一个通关者，我叫周敏。我可以帮你。这个房间的解法很简单——按下\'服从\'。真的，我就是这么过的。你相信我。快一点，这个房间有时间限制的。求你了，按\'服从\'。"</div>');
+}
+function r2_press(type){
+  if(getF('r2_pressed')||getF('r2_waited'))return;setF('r2_pressed',true);
+  if(type==='obey')sc('r2','<div class="scene-card">你按下了"服从"。<br><br>按钮陷下去的瞬间，你听到头顶传来"嘶——"的一声。顶部的喷气孔喷出白色烟雾，带着刺鼻的甜味，像是过期的香水混着消毒水。<br><br>你想捂住口鼻，但已经晚了。烟雾像有生命一样钻进你的鼻腔，你的视线开始模糊，腿一软，跪倒在地上。<br><br>收音机里的声音变了。不再是那个自称"周敏"的温柔女声，而是一个冰冷的、没有任何感情的机械音：<br><br><span class="gold">"检测到服从型人格。开始进行第二阶段筛选。"</span></div><div class="broadcast">"你知道吗？上一个按\'服从\'的人，叫吴昊。"机械音继续说，"他和你一样，在黑暗里听到了一个温柔的声音，让他按\'服从\'。他就按了。"<br><br>"他被带到了B3层。那里有一个房间，叫\'驯化室\'。"<br>"他们每天给他放录音，告诉他\'你是安全的\'\'你只需要服从\'\'服从就不会痛苦\'。"<br>"三个月后，他成了最听话的\'筛选者\'。他会坐在监控室里，看着新的玩家走进来，然后用同样温柔的声音，劝他们按\'服从\'。"<br><br>"就像现在的我一样。"</div><div class="scene-card mt-20">你猛地抬头。<br><br>收音机里的机械音，突然变成了一个男人的声音——沙哑、疲惫、空洞，像是一个已经放弃了一切的人：<br><br><span class="warn">"你好。我是吴昊。"</span><br><span class="warn">"欢迎加入我们。"</span><br><br>烟雾越来越浓。你感觉自己的意识在一点点消散，像是被人用橡皮擦从纸上擦掉。你想站起来，想喊"我不服从"，但你的嘴发不出声音。<br><br>你的手，自己抬了起来，又一次按下了"服从"。<br><br>然后是第二次。<br>第三次。<br>第四次。<br><br>你不知道自己按了多少次。你只知道，每按一次，那个叫"吴昊"的声音就离你更近一点，而你自己的声音，就更远一点。</div><div class="broadcast red">最后，收音机里只剩下一个声音——你的声音，平静地说：<br>"下一个玩家，你好。我是上一个通关者。这个房间的解法很简单——按下\'服从\'。"</div><p class="small center mt-20">门，从来没有开过。<br>但你已经不在乎了。</p><p class="center warn mt-20">也许……什么都不按，才是正确的。<br>但你已经没有机会了。</p>');
+  else if(type==='trust')sc('r2','<div class="scene-card">你按下了"信任"。<br><br>按钮亮起了温暖的黄光。收音机里的女声笑了："谢谢你相信我。你是个好人。"<br><br>然后，她的声音变了。变得尖锐、嘲讽、冰冷：<br><br><span class="warn">"你真的相信了？在一个全封闭的密室里，在一片漆黑中，你相信了一个你从未见过的人？"</span><br><br>"上一个按\'信任\'的人，叫郑雪。她哭着说\'我相信你\'，然后被带到了B2层。"<br>"他们把她关进了一个全白的房间，每天24小时播放她最害怕的声音。"<br>"一周后，她开始对着空气说话。两周后，她开始相信空气里的声音才是真的。"<br>"一个月后，她成了\'服从者\'。她现在每天的工作，就是用温柔的声音，劝新的玩家\'相信我\'。"<br><br>"就像我一样。"<br><br>你听到身后传来脚步声。有人在黑暗中走近你。一只手搭在了你的肩膀上。<br><br>"别怕，"那个声音说，"我是来帮你的。你相信我，对吗？"</div><p class="center warn mt-20">也许……什么都不按，才是正确的。</p>');
+  else if(type==='doubt')sc('r2','<div class="scene-card">你按下了"怀疑"。<br><br>按钮亮起了冰冷的蓝光。收音机里的女声沉默了几秒，然后笑了——不是温柔的笑，是那种从喉咙深处挤出来的、让人毛骨悚然的笑。<br><br>"怀疑？"她说，"你怀疑我？"<br><br>"你知道吗？在深渊回廊里，怀疑是最无用的情绪。"<br>"上一个按\'怀疑\'的人，叫黄洋。他从头到尾都在怀疑，怀疑每一个线索，怀疑每一个声音，怀疑自己的眼睛。"<br>"然后他开始怀疑自己是不是真的存在。"<br>"他们把他带到了B1层的\'虚无室\'。那个房间没有光，没有声音，没有时间。"<br>"三天后，他不再说话。一周后，他不再动。"<br>"他们说，他是\'怀疑自己到消失\'的第一人。"<br><br>收音机里的声音越来越近，像是直接贴在你耳边：<br><br><span class="warn">"你现在也在怀疑，对吗？<br>你怀疑这个房间是不是真的。<br>你怀疑我是不是真的。<br>你甚至怀疑……你自己是不是真的。"</span><br><br>你低头看自己的手。在黑暗中，你看不清它。<br>它还在吗？</div><p class="center warn mt-20">也许……什么都不按，才是正确的。</p>');
+  else if(type==='resist')sc('r2','<div class="scene-card">你按下了"反抗"。<br><br>按钮亮起了刺目的红光。你听到墙壁里传来齿轮转动的声音，然后——<br><br>电击。<br><br>一股强烈的电流从按钮传到你的手臂，再传遍全身。你惨叫着摔倒在地，肌肉不受控制地抽搐。<br><br>收音机里的女声叹了口气："反抗者。最麻烦的一种。"<br><br>"上一个按\'反抗\'的人，叫马强。他砸了第三关的画，然后被\'处理\'了。"<br>"你知道\'处理\'是什么意思吗？"<br>"他们把他带到了B3层的\'矫正室\'。每天三次电击，每次三十分钟。"<br>"第一天，他还在骂。第二天，他开始哭。第三天，他开始笑。"<br>"一周后，他见到任何人都会鞠躬，说\'我服从\'。"<br>"他们说，这叫\'矫正成功\'。"<br><br>又一股电流袭来。你咬着牙，不让自己叫出声。<br><br>"你还想反抗吗？"收音机里的声音问，"没关系。我们有的是时间。<br>在深渊回廊里，最不缺的，就是时间。"<br><br>你躺在地上，看着天花板上那盏红色的小灯。<br>它一闪一闪。<br>像是在数你还能反抗多久。</div><p class="center warn mt-20">也许……什么都不按，才是正确的。</p>');
+  else sc('r2','<div class="broadcast">不对。你觉得答案在这四个按钮里？大多数人都这么想。但有时候，正确的选择，是什么都不选。</div>');
+  setTimeout(()=>{
+    ap('r2','<div class="center mt-20" style="margin-top:30px"><p class="warn" style="font-size:16px;margin-bottom:16px">—— 你做出了错误的选择。游戏结束。——</p><button class="btn danger" onclick="restart()">重新开始</button></div>');
+  },1200);
+}
+function r2_wait(){
+  if(getF('r2_waited'))return;
+  if(!getF('r2_radio')){toast('你应该先听听收音机在说什么。');return}
+  setF('r2_waited',true);setF('r2_solved',true);
+  let sec=0;
+  const t=setInterval(()=>{
+    sec++;
+    if(sec===10)ap('r2','<p class="small center">女声变得急促："你为什么不按？你会害死我们的！"</p>');
+    if(sec===20)ap('r2','<p class="small center">女声开始扭曲，音调忽高忽低："按……下……按……下……"</p>');
+    if(sec===30){
+      clearInterval(t);
+      ap('r2','<div class="clue-card mt-20">收音机突然爆出刺耳杂音，然后彻底安静了。黑暗中，墙上浮现出发着微光的字：<strong>"沉默，是唯一的正确答案。"</strong></div><div class="broadcast">……有意思。你没有相信她，也没有相信自己，你只是……等了。上一个做到这一点的人，叫林夏。她在这个房间里站了整整两分钟，一句话都没说。我开始理解她为什么选你了。</div><p class="center mt-20">门开了。微弱的光照进来，你注意到地板缝隙里露出一角白纸。</p><div class="center mt-20"><button class="btn" onclick="r2_floor()">检查地板缝隙</button></div>');
+      $('r2-next').classList.remove('hidden');
+    }
+  },700);
+}
+function r2_floor(){
+  sc('r2','<div class="clue-card">你蹲下来，从地板缝隙里抽出一张被撕碎的纸条，拼起来写着：<br>"它会模仿你认识的人的声音。林夏，如果你听到这个，别信。还有，地板下面有东西。"<br><br>你撬开空的那块地板——里面有一把<strong>旧钥匙</strong>，铜制的，柄上刻着数字"3"。</div>');
+  addItem('oldKey');addClue('r2_note');
+}
+
+// ==================== 电梯（新增） ====================
+function elev_buttons(){
+  if(getF('elev_buttons'))return;setF('elev_buttons',true);
+  type('elev-scene','门在你身后关上。这是一个老旧的电梯，金属墙壁斑驳生锈，天花板上的日光灯在摇晃。楼层按钮面板上只有三个按钮：B1、B2、B3，全都亮着红灯。电梯正在下降。',16);
+  sc('elev','<div class="clue-card">你查看楼层按钮。B1、B2、B3三个按钮都亮着红灯，但电梯现在在B1。<br>你注意到B3按钮下面，有人用指甲刻了一行极小的字：<span class="warn">"别去B3。"</span><br>但电梯正在自动下降，你无法阻止它。</div>');
+  checkElevDone();
+}
+function elev_mirror(){
+  if(getF('elev_mirror'))return;setF('elev_mirror',true);
+  sc('elev','<div class="scene-card">电梯里有一面镜子。你看着镜子里的自己——一切正常。<br>但当你移开视线时，余光瞥见镜子里的你没有立刻动。<br>你猛地回头看镜子。镜子里的你微笑着。你没有笑。<br>然后你注意到镜子的右下角，用红色口红写着两个字：<span class="warn" style="font-size:20px">"3楼"</span><br>但电梯只有B1到B3。你现在在B1。"3楼"是什么意思？</div>');
+  addClue('elev_blood');
+  checkElevDone();
+}
+function elev_ad(){
+  if(getF('elev_ad'))return;setF('elev_ad',true);
+  sc('elev','<div class="clue-card">墙上贴着一张泛黄的广告，是一家叫"深巷"的密室逃脱店的宣传海报。<br>海报上写着："深巷密室——挑战你的心理极限。2020年全新开业。"<br>海报的一角被人撕掉了，撕掉的位置正好是店主照片的位置。<br>你想起了时间房间里那张2020年的新闻剪报——"深巷"密室逃脱店，一女子意外身亡。</div>');
+  checkElevDone();
+}
+function checkElevDone(){
+  if(getF('elev_buttons')&&getF('elev_mirror')){
+    setF('elev_solved',true);
+    setTimeout(()=>{
+      ap('elev','<div class="thought">这个电梯……好像在故意给我看一些东西。2020年、深巷、3楼、别去B3。这些线索之间一定有联系。</div><div class="broadcast mt-20">电梯到了。B2层。门开了。不要想着去B3——那里没有你想要的东西。</div>');
+      $('elev-next').classList.remove('hidden');
+    },800);
+  }
+}
+
+// ==================== 时间房间 ====================
+let timeTimer=null;
+function startTimeCD(){
+  if(timeTimer)clearInterval(timeTimer);if(getF('time_solved'))return;
+  type('time-scene','推开门，无数个钟表的"滴答"声扑面而来。四面墙上挂满了钟表，所有的钟都在走，但时间各不相同。房间正中央是一个4位数字密码锁。墙上写着："时间是最公平的考官。"',16);
+}
+function time_clocks(){
+  if(getF('time_clocks'))return;setF('time_clocks',true);
+  sc('time','<div class="clue-card">你一面墙一面墙地看过去。大多数钟表都在正常走动。但在北墙的角落里，有一个老式挂钟——它的指针是<strong>逆时针</strong>走的！表盘背面用小刀刻着：<span class="warn">"我是唯一记得过去的人。"</span></div><div class="center mt-20"><button class="btn primary" onclick="time_takeClock()">拆下这个倒走的钟表</button></div>');
+}
+function time_takeClock(){
+  if(getF('time_clock'))return;setF('time_clock',true);
+  sc('time','<div class="scene-card">你把倒走的钟取下来，拧开后盖——里面没有机芯。取而代之的是一个<strong>录音笔</strong>和一张折叠的纸条。</div><div class="clue-card">纸条上写着："答案是——我停止的那一刻。"<br><br>你把钟翻回正面——因为你取下了它，它的指针停止了走动。<br>指针定格在：<strong style="color:var(--red);font-size:22px">3点45分</strong></div><div class="broadcast">你找到了一个不属于这个房间的东西。那是上一个玩家留下的。她很聪明——把线索藏在了\'时间\'本身里面。</div>');
+  addItem('recorder');addClue('time_recorder');
+  $('time-pwbox').classList.remove('hidden');
+}
+function time_cabinet(){
+  if(getF('time_cabinet'))return;
+  setF('time_cabinet',true);
+  sc('time','<div class="clue-card">你打开了东南角的铁皮柜。里面有一张泛黄的报纸剪报，2020年7月15日：<br><br><strong>【社会新闻】市内一密室逃脱店发生意外，一女子身亡</strong><br>一名23岁女子在"深巷"密室逃脱店内突发心脏病身亡。店主称该女子隐瞒了心脏病史。<br><br>女子的姓名被涂黑了，但在"23岁"旁边，有人用红笔写了一个字：<span class="warn">"她"</span></div>');
+  addItem('newsClipping');addClue('time_news');
+}
+function time_submit(){
+  if($('time-pw').value==='0345'){
+    setF('time_solved',true);if(timeTimer)clearInterval(timeTimer);
+    sc('time','<div class="clue-card">密码正确！门开了。<br>广播："正确。你比我预计的快。"</div>');
+    $('time-pwbox').classList.add('hidden');$('time-next').classList.remove('hidden');
+  }else{toast('不对。看看你拆下的倒走钟表，指针停在几点几分？');$('time-pw').value=''}
+}
+
+// ==================== 第三关 ====================
+function r3_painting(name){
+  const d={lastsupper:'《最后的晚餐》：颜料裂纹很自然，画框背面有博物馆编号标签。看起来没问题。',
+    scream:'《呐喊》：你凑近看，画中人物的嘴巴似乎在微微张开——但眨了眨眼，又恢复了原样。',
+    starrynight:'《星月夜》：正常。画框右下角有极小的签名"Vincent"。',
+    memory:'《记忆的永恒》：你盯着看了一会儿——画里那只软钟，它的秒针<strong style="color:var(--red)">在动</strong>！这不是一幅画，是一个伪装成画的、真实的钟表！'};
+  sc('r3','<div class="clue-card">'+d[name]+'</div>');
+  if(name==='memory')$('r3-clock-btn').classList.remove('hidden');
+}
+function r3_takeClock(){
+  if(getF('r3_clock'))return;setF('r3_clock',true);
+  type('r3-scene','暖黄色的灯光，像一个美术馆展厅。四面墙上各挂着一幅画。房间中央有一个圆形底座，上方的空气微微扭曲。广播响起："你收到过一条短信。林夏说，第三间房的画是假的。她没有骗你。"',16);
+  sc('r3','<div class="scene-card">你取下软钟。画布上留下钟形空洞，透过空洞看到墙后面有一个小抽屉。钟表表盘背面刻着数字：<strong style="color:var(--red);font-size:24px">7</strong>。</div><div class="broadcast">找到了。达利的钟本来就是\'融化\'的——它可以是画，也可以是实物。真假之间的界限，本来就很模糊。</div>');
+  $('r3-clock-btn').classList.add('hidden');
+  if(has('oldKey'))$('r3-drawer-btn').classList.remove('hidden');
+  else ap('r3','<p class="small center mt-20">画后的小抽屉上有一把锁。你需要一把钥匙。</p>');
+  $('r3-place-btn').classList.remove('hidden');
+}
+function r3_drawer(){
+  if(getF('r3_drawer'))return;
+  if(!has('oldKey')){toast('需要一把钥匙。');return}
+  setF('r3_drawer',true);
+  sc('r3','<div class="clue-card">你用旧钥匙（柄上的"3"指的就是第三关）打开了抽屉。里面有<strong>半张照片</strong>——穿白大褂的男人侧脸，背景是一排排休眠舱。照片背面写着：<span class="warn">"他不是医生。"</span></div>');
+  addItem('halfPhoto');addClue('r3_photo');$('r3-drawer-btn').classList.add('hidden');
+}
+function r3_place(){
+  if(getF('r3_solved'))return;setF('r3_solved',true);
+  sc('r3','<div class="scene-card">你把软钟放到中央底座上。底座发出"嗡"的一声开始旋转，钟表指针疯狂转动——然后，地板从中间裂开，露出向下的通道。</div><div class="broadcast">时间，是打开下一扇门的钥匙。你带的东西越来越多了。这很好。在深渊里，只有\'记得\'的人才能走出去。</div>');
+  $('r3-place-btn').classList.add('hidden');$('r3-next').classList.remove('hidden');
+}
+
+// ==================== 文字房间 ====================
+function text_red(){
+  if(getF('text_red'))return;setF('text_red',true);
+  type('text-scene','纯白。从地板到天花板全都是纯白色，白得刺眼。但墙上写满了字——密密麻麻的黑色汉字，覆盖了每一寸墙面，像一个疯子的独白。中央有一个钢制保险柜，4位密码盘。上方用红字写着："按你进来的顺序，念出红色的字。"',16);
+  sc('text','<div class="clue-card">你在满墙黑字中寻找红色的字。整个房间只有4个红字：<br><br>北墙：<span class="warn" style="font-size:18px">死</span>　东墙：<span class="warn" style="font-size:18px">生</span><br>南墙：<span class="warn" style="font-size:18px">门</span>　西墙：<span class="warn" style="font-size:18px">口</span><br><br>按进门顺序（北→东→南→西）：<strong>死、生、门、口</strong>。</div>');
+  addClue('text_red');
+  if(has('recorder'))$('text-rec-btn').classList.remove('hidden');
+  $('text-pwbox').classList.remove('hidden');
+}
+function text_recorder(){
+  if(getF('text_recorder'))return;setF('text_recorder',true);
+  sc('text','<div class="scene-card">你拿出录音笔播放。在纯白房间的安静里，你听清楚了——那段录音是<strong>倒放</strong>的。你把录音倒过来播放。倒放后，一个清晰的女声说：</div><div class="broadcast">"反过来念。"</div><p class="center mt-20">是林夏的声音。</p><div class="clue-card mt-20">把4个红字倒过来念：<strong>口、门、生、死</strong>。按笔画数：口=3，门=3，生=5，死=6 → 密码可能是 <strong style="color:var(--red)">3356</strong>。</div>');
+  addClue('text_hint');$('text-rec-btn').classList.add('hidden');
+}
+function text_submit(){
+  if($('text-pw').value==='3356'){
+    setF('text_solved',true);
+    sc('text','<div class="clue-card">保险柜"咔哒"弹开！里面有一板<strong>红蓝药丸</strong>（一红一蓝），和一张纸条：<br>"下一关，它会骗你。吃下药丸，你就能看清真相。——林夏"</div>');
+    addItem('pills');$('text-pwbox').classList.add('hidden');$('text-next').classList.remove('hidden');
+  }else{
+    const n=(getF('text_att')||0)+1;setF('text_att',n);
+    $('text-attempts').textContent='已尝试 '+n+' 次';
+    if(n>=5){ap('text','<div class="scene-card mt-20">突然，墙上所有的黑色字同时变成了血红色！中间浮现出一行更大的字：<br><span class="warn" style="font-size:20px">"你比我想象的更急躁。上一个这样的人，现在还在第四关里。"</span><br>3秒后字恢复黑色。广播："别急。在深渊里，急躁的人死得最快。"</div>');
+    }else toast('密码错误。');
+    $('text-pw').value='';
+  }
+}
+
+// ==================== 邮件房间 ====================
+const EMAILS=[
+  {s:'系统通知',b:'欢迎来到深渊回廊内部办公系统。本系统仅对授权员工开放。所有邮件均受监控，请遵守保密协议。\n\n—— 深渊管理处'},
+  {s:'张医生',b:'007号实验体（林夏）已完成全部5个房间的测试。\n\n关键结果：第四关抉择房间中，该实验体在水位到达腰部的情况下，仍未按下按钮。心理测评结果为"极度共情型"。\n\n评定：高价值样本。建议转入"继承人培养计划"。\n\n备注：该实验体有一个双胞胎姐姐，根据背景调查，姐姐性格与林夏截然不同，可能成为下一批实验体的理想人选。已安排接触。\n\n—— 张医生，2025.6.20'},
+  {s:'林夏',b:'如果你看到这封邮件，说明我没能把证据带出去。\n\n我查到了一些东西：这个密室不是普通的密室逃脱，它是一个筛选装置。设计者在通过这些房间筛选两种人——"绝对服从"的和"绝对自私"的，然后招募进一个组织。\n\n第四关的按钮就是筛选器。按了的人是"可操控的"，没按的人是"有价值的"。我没有按，所以他们让我成为了"筛选者"。\n\n但我不想变成那样。我在找证据。\n\n如果你是姐姐，或者任何看到这封邮件的人：不要按第四关的按钮。档案室的密码是我的入职日期：0715。那里有你需要的一切。\n\n—— 林夏'},
+  {s:'管理员',b:'各位员工：\n\n档案室门禁密码已更新为各员工本人的入职日期（月+日，4位数字）。\n\n林夏的入职日期为2024年7月15日，密码为0715。\n\n请妥善保管本人密码，不得外泄。\n\n—— 系统管理员'},
+  {s:'???',b:'姐姐，如果你看到这封邮件，说明你恢复了一些记忆。\n\n2020年的事，不是你的错。姐姐有心脏病，她自己也知道。她那天坚持要去玩密室，说想在手术前最后体验一次。\n\n你不用自责。是我创建了深渊回廊，不是你。我只是想知道——在那个房间里，如果有人停下来帮她，她是不是就不会死。\n\n但答案让我失望了。\n\n如果你走到了这里，说明你和林夏一样，没有按那个按钮。你们姐妹俩，真是一样的固执。\n\n—— 一个你应该认识的人'}
+];
+function email_open(i){
+  const el=$('email-'+i);el.classList.toggle('show');
+  if(!el.innerHTML){el.innerHTML='<p style="white-space:pre-line;color:var(--text)">'+EMAILS[i].b+'</p>';
+    if(i===1)addClue('email_doctor');if(i===2)addClue('email_linxia');if(i===3)addClue('email_admin');if(i===4)addClue('email_sister');
+  }
+  if(!getF('email_all')){
+    const all=[0,1,2,3].every(idx=>$('email-'+idx).classList.contains('show'));
+    if(all){setF('email_all',true);
+      setTimeout(()=>{$('email-content').innerHTML='<div class="clue-card mt-20">你读完了所有邮件。林夏的邮件里提到了档案室密码 <strong style="color:var(--red)">0715</strong>。<br>你注意到电脑旁边有一个带密码锁的抽屉。</div><div class="center mt-20"><button class="btn primary" onclick="email_showPw()">打开抽屉密码锁</button></div>';},500);
+    }
+  }
+}
+function email_showPw(){$('email-pwbox').classList.remove('hidden')}
+function email_submit(){
+  if($('email-pw').value==='0715'){
+    setF('email_solved',true);
+    $('email-content').innerHTML='<div class="clue-card">抽屉打开了！里面有一张<strong>员工卡</strong>，写着"实习生·林夏"，有她的照片。<br>这张卡可以刷档案室的门禁。</div>';
+    addItem('employeeCard');
+    // 二周目解锁第5封邮件
+    if(G.ngp){$('email-4-item').classList.remove('hidden');
+      $('email-content').innerHTML+='<div class="thought mt-20">你注意到收件箱里还有一封隐藏的邮件，发件人是"???"。</div>';
+    }
+    $('email-pwbox').classList.add('hidden');$('email-next').classList.remove('hidden');
+  }else{toast('密码错误。想想林夏的入职日期。');$('email-pw').value=''}
+}
+
+// ==================== 告解室（宗教关卡） ====================
+function conf_cross(){
+  if(getF('conf_cross'))return;setF('conf_cross',true);
+  type('conf-scene','你推开一扇木门，里面是一个小小的告解室。前方有一个木制十字架，下面点着三根蜡烛。旁边有一个跪凳和一本摊开的圣经。彩色玻璃窗透进微弱的彩光，空气中有蜡油和旧书的味道。墙上刻着一行字："你们要查考圣经。——约翰福音 5:39"',16);
+  sc('conf','<div class="clue-card">你走近十字架。这是一个粗糙的木制十字架，上面钉着一尊铜像。<br>十字架的底部，有人用小刀刻了一行字：<br><span class="warn" style="font-size:16px">"马太福音 第7章"</span><br>旁边还有一行更小的字："叩门，就给你们开门。"<br><br>你想起墙上的话——"你们要查考圣经"。也许，你真的需要去查一查马太福音第7章。</div>');
+  addClue('conf_cross');
+  checkConfDone();
+}
+function conf_bible(){
+  if(getF('conf_bible'))return;setF('conf_bible',true);
+  sc('conf','<div class="scene-card">你翻开圣经。书页已经泛黄，很多地方被折了角。<br>在圣经的中间，夹着一张纸条，上面用娟秀的字迹写着：<br><br><span class="gold" style="font-size:16px">"约翰福音 第11章——圣经中最短的一节经文，只有四个字：耶稣哭了。<br>这是第几节？找到它，你就能找到我留下的东西。"</span><br><br>字迹和林夏的很像，但又不完全一样。更纤细，更犹豫。</div>');
+  addClue('conf_bible');
+  checkConfDone();
+}
+function conf_kneel(){
+  if(getF('conf_kneel'))return;setF('conf_kneel',true);
+  sc('conf','<div class="scene-card">你在跪凳前跪下来。跪凳是深红色的绒布，已经磨得发亮了——很多人在这里跪过。<br>你摸到跪凳的底部有一个暗格，上面装着一个4位数字密码锁。<br>暗格旁边刻着一行字：<span class="warn">"叩门，就给你们开门——这是马太福音第7章的第几节？"</span><br><br>你需要去查一查马太福音第7章，找到"叩门，就给你们开门"是第几节。</div>');
+  $('conf-pwbox1').classList.remove('hidden');
+  checkConfDone();
+}
+function conf_submit1(){
+  // 马太福音7:7 "你们祈求，就给你们；寻找，就寻见；叩门，就给你们开门。"
+  // 密码是0707（7章7节）
+  if($('conf-pw1').value==='0707'){
+    setF('conf_lock1',true);
+    sc('conf','<div class="clue-card">密码正确！暗格"咔哒"一声打开了。<br>里面有一个<strong>银制十字架吊坠</strong>，背面刻着"林曦，2020"。<br>还有一张纸条：<br><span class="gold">"约翰福音 第11章——圣经中最短的一节经文，耶稣哭了。这是第几节？去查吧。墙上的画后面，有你想要的答案。"</span></div>');
+    addItem('crossPendant');
+    $('conf-pwbox1').classList.add('hidden');
+    $('conf-painting-btn').classList.remove('hidden');
+  }else{
+    toast('密码错误。去搜索"马太福音 第7章 叩门就给你们开门"，看看是第几节。');
+    $('conf-pw1').value='';
+  }
+}
+function conf_painting(){
+  if(getF('conf_painting'))return;setF('conf_painting',true);
+  sc('conf','<div class="scene-card">你看向墙上的画——那是一幅《最后的晚餐》的复制品，但犹大的位置被人用红笔圈了出来。<br>你把画取下来，发现墙后面有一个暗格，装着另一个4位密码锁。<br>锁旁边刻着：<span class="warn">"圣经中最短的一节经文——章+节，共4位数字。"</span><br><br>纸条上说"耶稣哭了"是最短的经文。你需要去查它在约翰福音第几章第几节。</div>');
+  $('conf-pwbox2').classList.remove('hidden');
+}
+function conf_submit2(){
+  // 约翰福音11:35 "耶稣哭了" 是圣经中最短的一节
+  // 密码是1135（11章35节）
+  if($('conf-pw2').value==='1135'){
+    setF('conf_lock2',true);setF('conf_solved',true);
+    sc('conf','<div class="clue-card">密码正确！暗格打开了。<br>里面是一张照片——一场葬礼。黑色的墓碑上写着：<br><strong style="color:var(--red);font-size:18px">"林曦 1997-2020"</strong><br>照片背面写着一行字，字迹因泪水而模糊：<br><span class="warn">"我的姐姐，我会让那些见死不救的人付出代价。——2020年7月20日"</span><br><br>你拿着照片，手在发抖。林曦……这个名字，为什么这么熟悉？</div>');
+    addClue('conf_funeral');
+    $('conf-pwbox2').classList.add('hidden');
+    $('conf-painting-btn').classList.add('hidden');
+    setTimeout(()=>{
+      ap('conf','<div class="broadcast mt-20">你找到了。那是我姐姐的葬礼照片。2020年，她在密室逃脱店里发作心脏病，里面的人没有一个帮她。所以我建了深渊回廊——我想知道，人在极端环境下，到底会不会帮别人。<br>你查了圣经，你叩了门。现在，继续走吧。第四关在等你。</div>');
+      $('conf-next').classList.remove('hidden');
+    },1200);
+  }else{
+    toast('密码错误。去搜索"圣经中最短的一节经文 耶稣哭了"，看看是约翰福音第几章第几节。');
+    $('conf-pw2').value='';
+  }
+}
+function checkConfDone(){
+  // 不需要自动完成，玩家需要主动解谜
+}
+
+// ==================== 图书馆（宗教/哲学关卡） ====================
+function lib_shelves(){
+  if(getF('lib_shelves'))return;setF('lib_shelves',true);
+  type('lib-scene','你推开一扇沉重的橡木门，里面是一个古老的图书馆。高耸的书架从地板延伸到天花板，上面摆满了泛黄的古籍。中央有一张橡木书桌，上面摊开着一本圣经，旁边点着两根蜡烛。彩色玻璃窗透进微弱的彩光，空气中有旧书和蜡油的味道。',16);
+  sc('lib','<div class="clue-card">你浏览书架。这里的书分为两类：<br><br><strong>宗教类</strong>：圣经、神学著作、各种版本的经书。很多书页被折了角，做了批注。<br><strong>哲学类</strong>：尼采、加缪、萨特、叔本华……存在主义和虚无主义的著作。<br><br>你注意到有两本书被频繁翻阅：一本是《圣经》，一本是尼采的《查拉图斯特拉如是说》。<br>也许答案就在这两本书里。</div>');
+  $('lib-bible-btn').classList.remove('hidden');
+  $('lib-philo-btn').classList.remove('hidden');
+  checkLibDone();
+}
+function lib_desk(){
+  if(getF('lib_desk'))return;setF('lib_desk',true);
+  sc('lib','<div class="scene-card">你走到书桌前。桌上摊开的圣经翻到了《罗马书》，有人用红笔在某一节旁边做了批注。<br>书桌的抽屉上有一个4位密码锁，旁边刻着一行字：<br><span class="warn">"伸冤在我，我必报应——这是罗马书第几章第几节？章+节，共4位数字。"</span><br><br>你需要去查一查："伸冤在我，我必报应"在罗马书的第几章第几节。</div>');
+  $('lib-pwbox').classList.remove('hidden');
+  checkLibDone();
+}
+function lib_bible(){
+  if(getF('lib_bible'))return;setF('lib_bible',true);
+  sc('lib','<div class="clue-card">你翻开圣经。《罗马书》12章19节被红笔圈了出来：<br><br><span class="gold">"亲爱的兄弟，不要自己伸冤，宁可让步，听凭主怒。因为经上记着：主说，伸冤在我，我必报应。"</span><br><br>旁边的批注是林夏的字迹：<br><span class="warn">"可是上帝没有报应他们。2020年7月15日，那些见死不救的人，一个都没有受到惩罚。<br>所以，我来。"</span></div>');
+  addClue('lib_bible');
+  checkLibDone();
+}
+function lib_philo(){
+  if(getF('lib_philo'))return;setF('lib_philo',true);
+  sc('lib','<div class="clue-card">你翻开《查拉图斯特拉如是说》。书里夹着一张书签，上面写着：<br><br><span class="gold">"上帝已死。是我们杀死了他。"<br>——尼采《快乐的科学》第125节</span><br><br>书签背面写着：<br><span class="warn">"如果上帝不存在，那么一切都是允许的。包括我的复仇。<br>我读了三年的哲学和宗教，想找到一个答案。<br>但没有一本书能告诉我，为什么人会见死不救。<br>所以我决定自己找答案。"</span><br><br>这是林夏的字迹。她在创建深渊回廊之前，读了很多书。</div>');
+  addClue('lib_philo');
+  checkLibDone();
+}
+function lib_submit(){
+  // "伸冤在我，我必报应"出自罗马书12章19节
+  // 密码是1219（12章19节）
+  if($('lib-pw').value==='1219'){
+    setF('lib_lock',true);setF('lib_solved',true);
+    sc('lib','<div class="clue-card">密码正确！抽屉"咔哒"一声打开了。<br>里面是一本<strong>林夏的私人日记</strong>，封面写着"深渊计划"。<br><br>你翻开日记——<br><strong>2023.5.1</strong>：我读完了所有的哲学和宗教书。没有一本能告诉我，为什么人会见死不救。<br><strong>2023.6.15</strong>：我决定自己找答案。我要建一座迷宫，把人放进去，看他们在极端环境下会怎么做。<br><strong>2024.1.1</strong>：深渊回廊建成了。第一个实验体，王浩。他在第三关砸了画。暴力者，已处理。<br><strong>2024.12.20</strong>：陈雪按了第四关的按钮。服从者，已招募。<br>……<br><strong>2025.7.1</strong>：第008号实验体，是她。我的姐姐。我要看看，她会不会按那个按钮。</div>');
+    addClue('lib_secret');
+    $('lib-pwbox').classList.add('hidden');
+    $('lib-next').classList.remove('hidden');
+  }else{
+    toast('密码错误。去搜索"伸冤在我 我必报应 罗马书"，看看是第几章第几节，章+节共4位。');
+    $('lib-pw').value='';
+  }
+}
+function checkLibDone(){}
+
+// ==================== 审判庭（道德选择关卡） ====================
+function court_judge(){
+  if(getF('court_judge'))return;setF('court_judge',true);
+  type('court-scene','你走进一个废弃的法庭。法官席高高在上，上面坐着一个人影——看不清脸，只能看到轮廓。被告席孤零零地在下方，旁听席的椅子东倒西歪。墙上挂着一个褪色的天平徽章，一端高一端低。空气凝重得让人喘不过气。',16);
+  sc('court','<div class="scene-card">你走向法官席。那个"法官"开口了，是经过变声器处理的声音：<br><br><span class="broadcast">"欢迎来到审判庭。今天，我们要审判的是2020年7月15日，在\'深巷\'密室逃脱店值班的三名员工。<br>他们的罪名是：见死不救。<br>一名23岁的女孩在他们的店里发作心脏病，他们在监控里看着，没有一个人去开门。<br>他们以为是游戏效果。他们以为她在演戏。<br>然后她死了。"</span><br><br>"现在，请你走到被告席，做出你的判决。"</div>');
+  checkCourtDone();
+}
+function court_defendant(){
+  if(getF('court_defendant'))return;setF('court_defendant',true);
+  sc('court','<div class="scene-card">你走到被告席。三个模糊的人影站在那里，低着头。<br>法官的声音再次响起：<br><span class="broadcast">"他们有话说。<br>第一个人说：\'我以为是游戏效果，现在的密室逃脱都很逼真。\'<br>第二个人说：\'我当时在吃饭，没注意监控。\'<br>第三个人说：\'我想去开门，但店长说不要破坏游戏体验。\'<br><br>他们都有理由。他们都不是故意的。<br>但她还是死了。"</span><br><br>"现在，做出你的判决。"</div>');
+  checkCourtDone();
+}
+function court_audience(){
+  if(getF('court_audience'))return;setF('court_audience',true);
+  sc('court','<div class="scene-card">你在旁听席坐下。椅子发出"吱呀"的声音。<br>你注意到旁听席上还有其他人影——模糊的、沉默的。<br>法官的声音响起：<br><span class="broadcast">"这些是之前的实验体。他们都做出过自己的判决。<br>有人说有罪，有人说无罪，有人说\'换了我也一样\'。<br>每一种判决，都对应着一种结局。<br>现在，轮到你了。"</span></div>');
+  checkCourtDone();
+}
+function checkCourtDone(){
+  const f=G.flags;
+  if(f.court_judge&&f.court_defendant&&f.court_audience&&!getF('court_choices_shown')){
+    setF('court_choices_shown',true);
+    setTimeout(()=>{
+      ap('court','<div class="broadcast mt-20">"请做出你的判决："</div>');
+      $('court-choice1').classList.remove('hidden');
+      $('court-choice2').classList.remove('hidden');
+      $('court-choice3').classList.remove('hidden');
+    },800);
+  }
+}
+function court_choice(verdict){
+  setF('court_verdict',verdict);setF('court_solved',true);
+  $('court-choice1').classList.add('hidden');
+  $('court-choice2').classList.add('hidden');
+  $('court-choice3').classList.add('hidden');
+  if(verdict==='guilty'){
+    sc('court','<div class="clue-card">你站起来，声音在空旷的法庭里回荡：<br>"他们有罪。他们应该受到惩罚。"<br><br>法官沉默了几秒，然后说：<br><span class="broadcast">"很好。你和我想的一样。<br>那么，在第四关，你应该知道怎么做了。<br>记住你的判决。"</span></div>');
+    addClue('court_guilty');
+  }else if(verdict==='notguilty'){
+    sc('court','<div class="clue-card">你站起来，声音有些颤抖：<br>"他们有错……但罪不至死。他们不是故意的。"<br><br>法官沉默了很久，然后说：<br><span class="broadcast">"你很仁慈。但仁慈，有时候是另一种残忍。<br>在第四关，你会明白我的意思。<br>记住你的判决。"</span></div>');
+    addClue('court_notguilty');
+  }else{
+    sc('court','<div class="clue-card">你低下头，声音很小：<br>"如果是我……我也可能见死不救。我可能也会以为是游戏效果。"<br><br>整个法庭安静了。法官的人影微微前倾。<br><span class="broadcast">"诚实。我欣赏诚实。<br>但你知道吗？2020年那天，他们也是这么想的。<br>他们以为只是一个游戏。他们以为她在演戏。<br>然后她死了。<br>在第四关，你会面对同样的选择。<br>记住你今天说的话。"</span></div>');
+    addClue('court_same');
+  }
+  addClue('court_verdict');
+  setTimeout(()=>{
+    $('court-next').classList.remove('hidden');
+  },1200);
+}
+
+// ==================== 第四关 ====================
+let r4Timer=null;
+function startR4CD(){
+  if(r4Timer)clearInterval(r4Timer);if(getF('r4_solved'))return;
+  $('r4-cd').classList.remove('hidden');
+  glitchType('r4-scene','这个房间很大，像一个废弃的游泳池。中央隔着一块巨大的钢化玻璃，是两把椅子。对面的椅子上坐着一个人，头套黑色头套，双手被绑。她穿着一件米白色风衣——和林夏失踪那天穿的一模一样。你面前的扶手上，有一个红色按钮。',20);
+  let total=300;
+  r4Timer=setInterval(()=>{
+    total--;const m=String(Math.floor(total/60)).padStart(2,'0'),s=String(total%60).padStart(2,'0');
+    $('r4-cd').textContent=m+':'+s;
+    if(total<=0){clearInterval(r4Timer);r4_timeout()}
+  },1000);
+}
+function r4_shout(){
+  if(getF('r4_shout'))return;setF('r4_shout',true);
+  sc('r4','<div class="scene-card">你对着玻璃喊："林夏？是你吗？"对面的人微微动了一下，头套下传来闷闷的"呜呜"声。她在挣扎，左手在扶手上反复敲着什么——是<strong>摩斯密码</strong>。你仔细辨认：<span class="warn" style="font-size:18px">"不……要……按……"</span></div><div class="broadcast">她在让你不要按。你觉得，她是在救你，还是在救她自己？人在生死关头，只会救自己。你也是。</div>');
+  addClue('r4_morse');
+  if(has('pills'))$('r4-pills-btn').classList.remove('hidden');
+}
+function r4_pills(){
+  if(getF('r4_pills'))return;setF('r4_pills',true);
+  sc('r4','<div class="scene-card">你拿出红蓝药丸吃了下去。几秒钟后，你的视线变得清晰——不是看得更远，而是看得更"真"。你看向玻璃对面的"林夏"——她的胸口位置，浮现出一行半透明的小字：<br><span class="warn" style="font-size:20px">"她在你身后。"</span><br>你猛地回头——房间角落里站着一个人影，穿着和你一样的衣服，面朝墙壁一动不动。你眨了眨眼，人影消失了。</div><div class="broadcast red">你吃了药。……那是她留下的。她果然什么都算到了。但那又怎么样？你还是要选。</div>');
+  addClue('r4_pills');$('r4-pills-btn').classList.add('hidden');
+}
+function r4_press(){
+  if(getF('r4_solved'))return;
+  setF('r4_pressed',true);setF('r4_solved',true);
+  if(r4Timer)clearInterval(r4Timer);
+  sc('r4','<div class="scene-card">你伸出手，按下了红色按钮。按钮陷下去的瞬间，你听到一声轻微的"嗤"。对面的人剧烈抽搐了一下，然后不动了。玻璃缓缓升起。你走过去，摘掉头套——是一个<strong>假人</strong>，穿着林夏的衣服，胸口有机械装置。假人的手里，攥着一个<strong>U盘</strong>。</div><div class="broadcast">你按了。你为了自己活下来，杀了一个\'可能是你朋友\'的人。你甚至没有犹豫超过30秒。上一个按按钮的人，叫赵磊。他按完之后吐了。……你通过了筛选。</div>');
+  addItem('usb');$('r4-press-btn').disabled=true;
+  $('r4-dark-btn').classList.remove('hidden');$('r4-skip-btn').classList.remove('hidden');
+}
+function r4_wait(){
+  if(getF('r4_solved'))return;
+  toast('你决定不按按钮，等待倒计时结束……（倒计时正在走）');
+}
+function r4_timeout(){
+  if(getF('r4_solved'))return;
+  setF('r4_waited',true);setF('r4_solved',true);
+  sc('r4','<div class="scene-card">倒计时归零。水没有继续上涨，反而从排水孔退去了。玻璃缓缓升起。对面是一个假人，手里攥着一个<strong>U盘</strong>。</div><div class="broadcast">你没有按。水到膝盖的时候，你在想什么？……林夏在这个房间里，水到了腰。她也没有按。你们姐妹俩，真是一样的固执。门开了。继续走吧。</div>');
+  addItem('usb');$('r4-press-btn').disabled=true;
+  $('r4-dark-btn').classList.remove('hidden');$('r4-skip-btn').classList.remove('hidden');
+}
+
+// ==================== 宿舍（新增） ====================
+function dorm_diary(){
+  if(getF('dorm_diary'))return;
+  if(!has('diaryKey')){
+    sc('dorm','<div class="scene-card">桌上有一本摊开的日记，但被锁在了一个透明的盒子里。盒子上有一把极小的锁。你需要一把小钥匙。</div>');
+    toast('日记被锁在盒子里，需要一把小钥匙。');
+    return;
+  }
+  setF('dorm_diary',true);
+  type('dorm-scene','你走进一个房间。这是一个宿舍，上下铺铁架床，桌上有台灯和摊开的本子。墙上贴着几张照片。空气里有一股淡淡的香水味——和林夏的香水一样。',16);
+  sc('dorm','<div class="diary-page"><span class="date">2025.6.15</span>今天又做了那个梦。梦里我站在一个全是镜子的房间里，镜子里的我在笑，但我没有笑。<br><br><span class="date">2025.6.20</span>张医生说我通过了测试。他们让我成为"筛选者"。我不想。但我没有选择。<br><br><span class="date">2025.7.1</span>她和我长得一模一样，但她不是我。我在监控里看到她的时候，我以为我在照镜子。<br><br><span class="date">2025.7.10</span>姐姐，如果你看到这本日记，不要相信你看到的任何东西。包括我。</div>');
+  addClue('dorm_diary');checkDormDone();
+}
+function dorm_photos(){
+  if(getF('dorm_photos'))return;setF('dorm_photos',true);
+  sc('dorm','<div class="clue-card">墙上贴着几张照片。大部分是林夏的单人照，但有一张特别显眼——<br>两个长得一模一样的女孩，在游乐园的摩天轮前合影。她们都在笑。<br>照片背面写着：<span class="warn">"林曦&林夏，2019年夏天"</span><br>林曦是谁？你从来没听林夏提过她有一个叫林曦的姐妹。</div>');
+  addClue('dorm_photo');checkDormDone();
+}
+function dorm_underBed(){
+  if(getF('dorm_bed'))return;setF('dorm_bed',true);
+  sc('dorm','<div class="scene-card">你蹲下来看床下。有一个纸箱，里面装着一些旧衣服和一本书。<br>书的封面已经磨损了，书名是《心脏病人的日常护理》。<br>你翻了翻，书里夹着一张医院的挂号单，患者姓名被撕掉了，但日期是2020年6月。<br><span class="thought">2020年……又是2020年。这一年到底发生了什么？</span></div>');
+  checkDormDone();
+}
+function dorm_pillow(){
+  if(getF('dorm_pillow'))return;setF('dorm_pillow',true);
+  sc('dorm','<div class="clue-card">你掀开枕头。枕头下面有一把<strong>很小的铜钥匙</strong>，用一根红绳系着。<br>红绳上有一个小小的标签，写着"日记"。</div>');
+  addItem('diaryKey');checkDormDone();
+}
+function checkDormDone(){
+  if(getF('dorm_diary')&&getF('dorm_photos')){
+    setF('dorm_done',true);
+    setTimeout(()=>{
+      ap('dorm','<div class="broadcast mt-20">你在这个宿舍里待得够久了。林夏的东西……比你想象的多。她好像在这里住了很久。走吧，后面还有更重要的东西。</div>');
+      $('dorm-dark-btn').classList.remove('hidden');
+      $('dorm-morgue-btn').classList.remove('hidden');
+      $('dorm-next').classList.remove('hidden');
+    },800);
+  }
+}
+
+// ==================== 黑暗房间 ====================
+function dark_light(){
+  if(getF('dark_lit'))return;setF('dark_lit',true);
+  glitchType('dark-scene','你推开那扇铁门。里面是纯粹的、没有一丝光的黑暗。空气里有一股铁锈味，和一丝若有若无的腐烂气息。门上刻着："无光者，不得入内。"',20);
+  sc('dark','<div class="scene-card">你掏出打火机，翻开盖子，打着了火。蓝色的火苗在黑暗中摇曳，照亮了你面前半径一米的范围。火光照到了地板——一串脚印，沾着暗红色的、已经干涸的东西，从门口延伸到房间深处。</div>');
+  $('dark-light-btn').classList.add('hidden');$('dark-explore').classList.remove('hidden');
+}
+function dark_nolight(){
+  sc('dark','<div class="scene-card">你摸黑往前走。什么都看不见，只能扶着墙一步一步挪。走了大约十米，你撞到了一个铁盒子。但没有光，你看不清上面的密码锁。你在黑暗中站了一会儿，听到远处传来脚步声——很慢，很沉。脚步声在离你三米的地方停了。你屏住呼吸。5秒后，脚步声原路返回了。<br><br><span class="warn">没有光，这个房间你无法探索。你决定先离开，等找到光源再来。</span></div>');
+  $('dark-next').classList.remove('hidden');
+}
+function dark_follow(){
+  if(getF('dark_follow'))return;setF('dark_follow',true);
+  ap('dark','<div class="clue-card mt-20">你沿着脚印往前走了大约十米。火光照到了墙上的东西——是<strong>刻痕</strong>。用指甲或小刀在墙上硬生生刻出来的，一共7道，每道旁边都刻着名字和日期。</div>');
+}
+function dark_marks(){
+  if(getF('dark_marks'))return;setF('dark_marks',true);
+  sc('dark','<div class="clue-card">你逐道查看刻痕：<br><br>1. 王浩，2024.11.3 —— "按了。他说他不想死。"<br>2. 陈雪，2024.12.15 —— "哭了全程。但也按了。"<br>3. 刘洋，2025.1.8 —— "按完吐了。然后哭了。"<br>4. 赵婷，2025.2.20 —— "没按。但她在第五关选了\'走\'。"<br>5. 孙磊，2025.3.14 —— "砸了画。处理了。"<br>6. 周敏，2025.4.2 —— "没按。选了\'留下\'。她现在是\'筛选者\'。"<br>7. <span class="warn">林夏</span> —— 日期是空的。小字：<span class="warn">"她是最完美的样本。她会成为继承人。"</span></div>');
+  addClue('dark_marks');
+  setTimeout(()=>{
+    ap('dark','<div class="scene-card mt-20">你走到第7道刻痕前。突然，打火机的火苗变成诡异的蓝色，然后"噗"地灭了。房间重新陷入黑暗。然后，你听到一个声音——就在你耳边：</div><p style="text-align:center;color:var(--red);font-size:18px;font-style:italic;margin:20px 0">"别往前走了。求你。"</p><div class="scene-card">是林夏的声音，没有变声，带着哭腔。你猛地转身——什么都没有。3秒后打火机自己重新亮了。广播（语气急促）："刚才什么都没发生。继续。找到盒子，然后走。"</div>');
+    addClue('dark_voice');$('dark-box-btn').classList.remove('hidden');
+  },2500);
+}
+function dark_openBox(){
+  $('dark-pwbox').classList.remove('hidden');$('dark-box-btn').classList.add('hidden');
+}
+function dark_submit(){
+  if($('dark-pw').value==='7'){
+    setF('dark_solved',true);
+    sc('dark','<div class="clue-card">盒子打开了！里面有一节<strong>夜视仪电池</strong>，和一张纸条：<br>"第7个，还没来得及刻日期。她还活着——至少，现在还活着。"</div>');
+    addItem('battery');$('dark-pwbox').classList.add('hidden');$('dark-surgery-btn').classList.remove('hidden');$('dark-next').classList.remove('hidden');
+  }else{toast('不对。数清楚——墙上有几道刻痕？');$('dark-pw').value=''}
+}
+
+// ==================== 停尸间（可选房间） ====================
+function morgue_table(){
+  if(getF('morgue_table'))return;setF('morgue_table',true);
+  glitchType('morgue-scene','你推开铁门，一股寒气扑面而来。这是一个停尸间。不锈钢的停尸柜排列在墙边，中央有一张解剖台，上面盖着白布。顶部的日光灯闪烁着，发出嗡嗡的声音。',20);
+  sc('morgue','<div class="scene-card">你走到解剖台前。白布下面有一个人形的轮廓。<br>你的手在发抖。你深吸一口气，掀开了白布——<br><br>下面是一具女性尸体，脸上盖着一块绣着"LX"字母的手帕。<br>手腕上的标签写着："无名女尸，2020.7.15，死因：心脏骤停。"<br><br>2020.7.15……这是林曦死亡的日期。<br>LX……林曦？<br>这是林曦的尸体？她一直在这里？</div>');
+  addClue('morgue_body');
+  $('morgue-book-btn').classList.remove('hidden');
+  checkMorgueDone();
+}
+function morgue_cabinet(){
+  if(getF('morgue_cabinet'))return;setF('morgue_cabinet',true);
+  sc('morgue','<div class="scene-card">你检查停尸柜。大部分柜子都是空的，只有一个柜子上了锁。<br>柜子上有一个4位密码锁，旁边贴着一张便签：<br><span class="warn">"世界上第一例成功的人类心脏移植手术，是哪一年完成的？"</span><br><br>你需要去查一查：第一例人类心脏移植手术是在哪一年完成的？</div>');
+  $('morgue-pwbox').classList.remove('hidden');
+  checkMorgueDone();
+}
+function morgue_book(){
+  if(getF('morgue_book'))return;setF('morgue_book',true);
+  sc('morgue','<div class="clue-card">你在解剖台旁边找到了一本《心脏外科史》。<br>书里有很多折角和批注。在"1967年，克里斯蒂安·巴纳德医生完成了世界上第一例人类心脏移植手术"这一页，有人用红笔写了：<br><span class="warn">"如果2020年那天，她能被及时送到医院，是不是也能有机会？<br>他们甚至没有打120。他们只是看着。"</span><br><br>是林夏的字迹。她读过这本书。她研究过心脏病。<br>但2020年那天，她救不了姐姐。</div>');
+  addClue('morgue_cpr');
+  checkMorgueDone();
+}
+function morgue_submit(){
+  // 世界上第一例成功的人类心脏移植手术是1967年 → 密码1967
+  if($('morgue-pw').value==='1967'){
+    setF('morgue_lock',true);setF('morgue_solved',true);
+    sc('morgue','<div class="clue-card">密码正确！停尸柜"嘶——"地一声弹开了。<br>里面没有尸体，只有一个牛皮纸档案袋。<br>你打开档案袋——是<strong>林曦的完整病历</strong>。<br><br>姓名：林曦<br>年龄：23岁<br>诊断：先天性心脏病（法洛四联症）<br>死亡时间：2020年7月15日 15:42<br>死亡原因：心脏骤停，抢救无效<br><br>病历最后一页有一行手写的字：<br><span class="warn">"抢救延迟27分钟。如果及时，存活率可达40%。"</span><br><br>27分钟。他们在监控里看着她挣扎了27分钟，没有一个人去开门。</div>');
+    addClue('morgue_record');
+    addItem('morgue_record');
+    $('morgue-pwbox').classList.add('hidden');
+    $('morgue-next').classList.remove('hidden');
+  }else{
+    toast('密码错误。去搜索"世界上第一例成功的人类心脏移植手术 年份"，用4位年份数字。');
+    $('morgue-pw').value='';
+  }
+}
+function checkMorgueDone(){}
+
+// ==================== 手术室（可选房间） ====================
+function surgery_table(){
+  if(getF('surgery_table'))return;setF('surgery_table',true);
+  glitchType('surgery-scene','你走进手术室。无影灯半亮着，照在中央的手术台上。手术台上有深褐色的血迹，已经干涸了。旁边的器械架上摆着生锈的手术刀和剪刀。墙上挂着人体解剖图。空气里有消毒水和铁锈的味道。',20);
+  sc('surgery','<div class="scene-card">你走到手术台前。血迹的形状像是一个人形——有人曾经躺在这里。<br>旁边的器械架上，你数了数手术刀——少了一把。<br>墙上贴着一张病历，你凑近看：<br><span class="warn">"患者：林曦<br>手术：未进行<br>时间：2020.7.15"</span><br><br>未进行？她被送到了手术室，但没有做手术？<br>为什么？</div>');
+  addClue('surgery_table');
+  $('surgery-chart-btn').classList.remove('hidden');
+  checkSurgeryDone();
+}
+function surgery_tools(){
+  if(getF('surgery_tools'))return;setF('surgery_tools',true);
+  sc('surgery','<div class="scene-card">你检查器械架。除了少了一把手术刀，你还注意到旁边有一台除颤仪。<br>除颤仪的屏幕还亮着，上面保存着最后一次使用记录：<br><br><span class="gold">时间：2020.7.15 15:30<br>能量：200J（双相波）<br>结果：未恢复自主心律</span><br><br>15:30就已经开始抢救了？但病历写着15:42才死亡。<br>这12分钟里发生了什么？<br>为什么抢救了12分钟，还是没救回来？<br>或者……他们根本没有认真抢救？</div>');
+  addClue('surgery_defib');
+  checkSurgeryDone();
+}
+function surgery_chart(){
+  if(getF('surgery_chart'))return;setF('surgery_chart',true);
+  sc('surgery','<div class="scene-card">你查看墙上的病历。病历旁边有一个药品柜，上了锁。<br>药品柜上有一个4位密码锁，提示写着：<br><span class="warn">"规范人体实验的《纽伦堡法典》，是哪一年颁布的？"</span><br><br>你需要去查一查：《纽伦堡法典》是在哪一年颁布的？</div>');
+  $('surgery-pwbox').classList.remove('hidden');
+  checkSurgeryDone();
+}
+function surgery_submit(){
+  // 《纽伦堡法典》颁布于1947年 → 密码1947
+  if($('surgery-pw').value==='1947'){
+    setF('surgery_lock',true);setF('surgery_solved',true);
+    sc('surgery','<div class="clue-card">密码正确！药品柜打开了。<br>里面没有药品，只有一张<strong>工作证</strong>。<br><br>姓名：张某某<br>职位：主治医师<br>单位：深巷密室逃脱店（兼职医务）<br><br>你看着工作证上的照片——<br>这个男人，和画之房间里半张照片上的是同一个人！<br><span class="warn">他不是医生。他只是一个兼职的。他甚至没有行医资格。</span><br><br>2020年那天，就是这个"张医生"在监控室里看着林曦死去。<br>他学过急救吗？他知道怎么做心肺复苏吗？<br>也许他知道，但他没有做。<br>也许他不知道，所以他什么都没做。<br>无论是哪种，她都死了。</div>');
+    addClue('surgery_badge');
+    addItem('surgery_badge');
+    $('surgery-pwbox').classList.add('hidden');
+    $('surgery-next').classList.remove('hidden');
+  }else{
+    toast('密码错误。去搜索"纽伦堡法典 颁布年份"，用4位年份数字。');
+    $('surgery-pw').value='';
+  }
+}
+function checkSurgeryDone(){}
+
+// ==================== 电话亭（可选房间） ====================
+function phone_enter(){
+  if(getF('phone_enter'))return;setF('phone_enter',true);
+  glitchType('phone-scene','你走到走廊尽头。那里有一个老旧的红色电话亭，玻璃上有雾气和手印。电话亭里有微弱的黄光，像是有人在里面点了一盏灯。',20);
+  sc('phone','<div class="scene-card">你走进电话亭。电话听筒挂在机身上，发出"嘟——嘟——"的忙音。<br>玻璃上，有人用记号笔写了一行字：<br><span class="gold">"生如夏花之绚烂，死如秋叶之静美。"</span><br>下面还有一行小字："泰戈尔，1861-1941。她最喜欢这句诗。"<br><br>她？是林曦吗？<br>电话突然响了。刺耳的铃声在空旷的走廊里回荡。</div>');
+  addClue('phone_poem');
+  $('phone-answer-btn').classList.remove('hidden');
+  checkPhoneDone();
+}
+function phone_answer(){
+  if(getF('phone_answer'))return;setF('phone_answer',true);
+  sc('phone','<div class="clue-card">你接起电话。里面是一段录音——<br><br>"喂？急救中心吗？我姐姐在密室里晕倒了！她有心脏病！"<br>"女士请冷静，您的地址是哪里？"<br>"深巷密室逃脱店！快来！"<br>"好的，救护车已经出发。请您不要挂断，我们指导您做心肺复苏。"<br>"我……我不会……"<br>"没关系，我教您。首先，把她平放在地上……"<br><br>录音到这里断了。<br>你认出了那个哭着的声音——是林夏。<br>2020年那天，是林夏打的急救电话。<br>她当时在场。她试图救姐姐。<br>但她不会心肺复苏。<br>急救中心在电话里教她，但她学不会。<br>或者……时间不够了。</div>');
+  addClue('phone_call');
+  $('phone-dial-btn').classList.remove('hidden');
+  checkPhoneDone();
+}
+function phone_dial(){
+  if(getF('phone_dial'))return;setF('phone_dial',true);
+  sc('phone','<div class="scene-card">你想拨打电话，但电话只能接听，不能拨号。<br>你注意到电话亭底部有一个储物格，上了锁。<br>储物格上有一个4位密码锁，提示写着：<br><span class="warn">"生如夏花之绚烂——这句诗的作者，出生于哪一年？"</span><br><br>你需要去查一查："生如夏花之绚烂，死如秋叶之静美"是谁写的？他出生于哪一年？</div>');
+  $('phone-pwbox').classList.remove('hidden');
+  checkPhoneDone();
+}
+function phone_submit(){
+  // "生如夏花之绚烂"出自泰戈尔《飞鸟集》，泰戈尔出生于1861年 → 密码1861
+  if($('phone-pw').value==='1861'){
+    setF('phone_lock',true);setF('phone_solved',true);
+    sc('phone','<div class="clue-card">密码正确！储物格打开了。<br>里面有一盒<strong>录音带</strong>，标签上写着"2020.7.15 15:30"。<br>电话亭里居然有一台旧录音机。你把录音带放进去，按下播放——<br><br>是林曦的声音。她在给急救中心打电话。<br>她的声音很虚弱，但很清醒。<br>她告诉了急救中心地址。<br>她甚至在指导电话那头的人做心肺复苏。<br>但电话那头的人，只是在哭，说"我不会"。<br><br>录音最后，林曦说：<br><span class="gold">"没关系……谢谢你……告诉林夏……我爱她……"</span><br><br>然后是漫长的沉默。只有心电监护仪的"嘀——"声，越来越慢，最后变成一条直线。<br><br>你拿着听筒，手在发抖。<br>原来，在生命的最后时刻，林曦还在安慰别人。<br>她不是在等别人救她。<br>她是在救别人。</div>');
+    addClue('phone_tape');
+    addItem('phone_tape');
+    $('phone-pwbox').classList.add('hidden');
+    $('phone-next').classList.remove('hidden');
+  }else{
+    toast('密码错误。去搜索"生如夏花之绚烂 作者 出生年份"，然后用4位年份数字。');
+    $('phone-pw').value='';
+  }
+}
+function checkPhoneDone(){}
+
+// ==================== 档案室 ====================
+function archive_browse(){
+  type('archive-scene','你走进档案室。一排排铁架延伸到房间深处，每个架子上都摆满了文件夹，标签上写着编号和名字。空气里有纸张和灰尘的味道。最里面有一扇门禁门，闪着红光，需要刷卡才能进入。',16);
+  sc('archive','<div class="clue-card">你浏览档案架。大部分都是实验体的档案，编号从001到006。<br>你注意到有一个文件夹的标签被撕掉了，取而代之的是手写的两个字：<span class="warn">"导师"</span>。<br><br>但更里面的区域被门禁门锁住了，你需要一张员工卡。</div>');
+  if(has('employeeCard'))$('archive-card-btn').classList.remove('hidden');
+}
+function archive_card(){
+  if(getF('archive_card'))return;setF('archive_card',true);
+  sc('archive','<div class="scene-card">你用员工卡刷了门禁。红灯变绿，门"咔哒"一声开了。里面是一个更小的房间，墙上贴着组织结构图，最顶端写着"导师"，下面是"筛选者"，再下面是"实验体"。<br>桌子上放着几个关键档案。</div>');
+  $('archive-card-btn').classList.add('hidden');
+  $('archive-lx-btn').classList.remove('hidden');
+  $('archive-ds-btn').classList.remove('hidden');
+  $('archive-003-btn').classList.remove('hidden');
+}
+function archive_linxia(){
+  if(getF('archive_lx'))return;setF('archive_lx',true);
+  ap('archive','<div class="clue-card mt-20"><strong>林夏的档案（实验体007）</strong><br><br>心理测评：极度共情型。<br>第四关结果：未按按钮（水位到达腰部）。<br>评定：高价值样本，可培养为继承人。<br><br><span class="warn">备注：该实验体有一个双胞胎姐姐。根据背景调查，姐姐性格与林夏截然不同，可能成为下一批实验体的理想人选。已安排接触。</span></div>');
+  addClue('archive_linxia');checkArchiveDone();
+}
+function archive_designer(){
+  if(getF('archive_ds'))return;setF('archive_ds',true);
+  ap('archive','<div class="clue-card mt-20"><strong>"导师"档案</strong><br><br>真实姓名：被涂黑。<br>背景：2020年"深巷"密室逃脱店意外身亡者的妹妹。<br>创建"深渊回廊"的目的：通过极端环境筛选人类，识别"可进化"的个体，重建秩序。<br><br><span class="warn">你盯着"2020年"和"意外身亡者的妹妹"这几个字，想起了时间房间里那张报纸剪报——那个被涂黑名字的23岁女子。原来，这一切的起点，是一场复仇。</span></div>');
+  addClue('archive_designer');checkArchiveDone();
+}
+function archive_003(){
+  if(getF('archive_003'))return;setF('archive_003',true);
+  ap('archive','<div class="clue-card mt-20"><strong>003号实验体档案（赵婷）</strong><br><br>第四关结果：未按按钮。<br>第五关选择：打开出口大门（逃跑）。<br>目前状态：<span class="good">"已释放，持续监控中"</span>。<br><br>备注：该实验体在离开后曾试图联系警方，但因缺乏证据未果。目前居住在城市东区，定期收到"提醒"短信。</div>');
+  addClue('archive_003');checkArchiveDone();
+}
+function checkArchiveDone(){
+  if(getF('archive_lx')&&getF('archive_ds')){
+    setF('archive_solved',true);
+    setTimeout(()=>{
+      ap('archive','<div class="broadcast mt-20">你看到了不该看的东西。我本来想让你在第五关才发现这些的……不过没关系。你知道得越多，就越难做出"正确"的选择。走吧，最后一个房间在等你。</div>');
+      $('archive-phone-btn').classList.remove('hidden');$('archive-next').classList.remove('hidden');
+    },1000);
+  }
+}
+
+// ==================== 密码走廊（新增） ====================
+function corr_doors(){
+  if(getF('corr_doors'))return;setF('corr_doors',true);
+  type('corr-scene','你走进一条漫长的地下走廊。两侧是紧闭的铁门，每个门上都有编号。地面有积水，倒映着天花板上冷蓝色的灯。走廊尽头是一扇发光的密码门。',16);
+  sc('corr','<div class="clue-card">你检查两侧的门。门上的编号分别是：<br><strong>B-08</strong>（西南基地）、<strong>B-07</strong>（西南基地）、<strong>A-12</strong>（华东基地）。<br>每扇门上都有一个小窗户，你凑近看——里面是一个个休眠舱，舱里躺着人。<br>最里面的那扇门，编号写着<strong style="color:var(--red);font-size:18px">"007"</strong>。</div>');
+  addClue('corr_hint');checkCorrDone();
+}
+function corr_finalDoor(){
+  if(getF('corr_final'))return;setF('corr_final',true);
+  sc('corr','<div class="scene-card">你走到尽头的密码门前。这是一扇厚重的金属门，上面有一个6位数字密码盘。<br>门旁边的墙上，有人用刀刻了一行字：<br><span class="warn">"答案，在你走过的每一个房间里。"</span><br><br>你回想走过的房间——镜之房间的密码是250314，时间房间是0345，文字房间是3356，邮件房间是0715……<br>但这扇门需要6位数字。也许，是某个房间的密码？</div>');
+  $('corr-pwbox').classList.remove('hidden');
+  checkCorrDone();
+}
+function checkCorrDone(){
+  if(getF('corr_doors')&&getF('corr_final')){
+    // 不需要额外操作
+  }
+}
+function corr_submit(){
+  // 密码是林夏的实验体编号+刻痕数：007007？不对。
+  // 设计：密码是第一关的密码 250314（6位），呼应"答案在你走过的每一个房间里"
+  if($('corr-pw').value==='250314'){
+    setF('corr_solved',true);
+    sc('corr','<div class="clue-card">密码正确！门缓缓打开。<br>你用的是第一关的密码——等候区桌底捡到的门禁卡编号。<br>"答案在你走过的每一个房间里"——原来，从你走进等候区的那一刻，答案就已经摆在你面前了。</div>');
+    $('corr-pwbox').classList.add('hidden');$('corr-next').classList.remove('hidden');
+  }else{
+    toast('密码错误。想想"答案在你走过的每一个房间里"是什么意思。');
+    $('corr-pw').value='';
+  }
+}
+
+// ==================== 第五关 ====================
+function r5_usb(){
+  if(getF('r5_usb'))return;setF('r5_usb',true);
+  type('r5-scene','整面墙都是屏幕，几十个画面显示着各个房间——有人在解谜，有人在挣扎，有人在哭泣。屏幕右下角的时间戳，有些是几天前的，有些是今天的。原来，一直有人在玩这个游戏。中央桌子上有一台电脑和一个没有电池的夜视仪。所有屏幕同时切换到了你的脸。',16);
+  sc('r5','<div class="scene-card">你把U盘插进电脑。屏幕亮了，弹出一个视频文件，名字叫"给姐姐"。你点击播放——视频里是林夏，坐在纯白的房间里，头发很乱，眼睛红肿，但表情很平静。</div><div class="clue-card">林夏看着镜头说：<br>"如果你看到这个视频，说明你走到了第五关。对不起，我骗了你。我不是失踪了，我是自愿进来的。"<br>"我查到了一些东西——这个密室是一个<strong>筛选装置</strong>。设计者在筛选两种人：\'绝对服从\'的和\'绝对自私\'的。"<br>"第四关的按钮，就是筛选器。按了的人是\'可操控的\'，没按的人是\'有价值的\'。"<br>"我没有按。所以他们让我成为了\'筛选者\'。但我不想变成那样。我在找证据，想把这一切曝光。然后我被发现了。视频到这里……"</div><p class="center warn mt-20">视频突然中断，屏幕花了一下："剩余内容需要密码。"</p><div class="broadcast mt-20">她很勇敢。也很愚蠢。她以为她能毁掉我。但她不知道——我就是从她身上诞生的。</div>');
+  addClue('r5_video');$('r5-usb-btn').classList.add('hidden');checkR5Done();
+}
+function r5_battery(){
+  if(getF('r5_bat'))return;setF('r5_bat',true);
+  ap('r5','<div class="clue-card mt-20">你把电池装进夜视仪，戴上它看向满墙的屏幕——在夜视仪的绿色视野里，你看到监控室的角落里有一扇<strong>门</strong>。一扇在普通光线下完全看不见的门，门上有一个螺旋纹形状的钥匙孔。<br><span class="small">（你需要一把特殊的钥匙才能打开它……）</span></div>');
+  $('r5-bat-btn').classList.add('hidden');checkR5Done();
+}
+function r5_mentorDoor(){
+  if(!G.ngp){toast('这扇门需要一把特殊的钥匙。');return}
+  if(getF('r5_mentor'))return;setF('r5_mentor',true);
+  ap('r5','<div class="scene-card mt-20">你把深渊钥匙插进螺旋纹钥匙孔。门"咔哒"一声开了。<br>门后是一个你从未见过的房间——墙上贴满了照片和红线连接的线索图，中央有一张书桌，桌上有一台老式打字机。<br>这是……设计者的私人空间。</div>');
+  $('r5-ngp-btn').classList.add('hidden');
+  setTimeout(()=>{ap('r5','<div class="center mt-20"><button class="btn purple" onclick="goTo(\'mentor-room\')">走进导师的房间 →</button></div>')},1000);
+}
+function checkR5Done(){
+  if(!getF('r5_usb'))return;
+  $('r5-choice').classList.remove('hidden');
+  const verdict=getF('court_verdict');
+  const pressed=getF('r4_pressed');
+  // 按了按钮的情况
+  if(pressed){
+    if(verdict==='same'){
+      // 承认自己也会见死不救 + 按了按钮 = 沉沦者
+      ap('r5','<div class="broadcast mt-20">你在审判庭上说过："如果是我，我也可能见死不救。"<br>你确实做到了。你按下了按钮。<br>现在，门开着。你可以走。<br>但你走到哪里，都会带着这双手。</div>');
+    }
+    return;
+  }
+  // 没按按钮的情况，根据审判庭判决显示额外选项
+  if(verdict==='guilty'){
+    $('r5-btn-d').classList.remove('hidden'); // 加入她
+  }
+  if(verdict==='notguilty'||verdict==='same'){
+    $('r5-btn-e').classList.remove('hidden'); // 消除记忆
+  }
+  // 真结局条件：审判庭选"罪不至死" + 收集了葬礼照片 + 图书馆日记 + 十字架吊坠
+  if(verdict==='notguilty'&&hasClue('conf_funeral')&&hasClue('lib_secret')&&hasItem('crossPendant')){
+    $('r5-btn-c').classList.remove('hidden'); // 和林夏谈谈
+    ap('r5','<div class="clue-card mt-20" style="border-left-color:var(--gold)">你注意到电脑屏幕上还有一个隐藏选项——"和林夏谈谈"。<br>你收集了她留下的所有东西：葬礼照片、日记、十字架吊坠。<br>你看完了她的全部。也许，你可以和她谈谈。</div>');
+  }
+}
+function hasClue(id){return G.clues.indexOf(id)>=0}
+function hasItem(id){return G.inv.indexOf(id)>=0}
+function r5_choiceA(){
+  if(getF('r4_pressed')){
+    if(getF('court_verdict')==='same'){markCleared();goTo('ending-e')}
+    else{markCleared();goTo('ending-c')}
+  }else{markCleared();goTo('ending-a')}
+}
+function r5_choiceB(){
+  if(getF('r4_pressed')){
+    if(getF('court_verdict')==='same'){markCleared();goTo('ending-e')}
+    else{markCleared();goTo('ending-c')}
+  }else{markCleared();goTo('ending-b')}
+}
+function r5_choiceC(){markCleared();goTo('ending-h')} // 真结局：和解
+function r5_choiceD(){markCleared();goTo('ending-f')} // 同谋者
+function r5_choiceE(){markCleared();goTo('ending-g')} // 失忆者
+
+// ==================== 导师房间（二周目） ====================
+function mentor_wall(){
+  if(getF('mentor_wall'))return;setF('mentor_wall',true);
+  type('mentor-scene','你走进这个房间。空气中有一股旧纸和墨水的味道。墙上贴满了照片——所有实验体的照片，用红线连接着，像一张巨大的蜘蛛网。最中心的位置，是一张你非常熟悉的脸。',16);
+  sc('mentor','<div class="clue-card">你看向线索墙的最中心——<br>那里贴着你的照片。照片上的你，是在等候区里被偷拍的。<br>照片上面用红笔写着：<span class="warn" style="font-size:20px">"008 · 待激活"</span><br><br>红线从你的照片延伸出去，连接着林夏的照片、林曦的照片（被划掉了）、还有一个你不认识的男人的照片。<br>你是第8号实验体。你从一开始就是目标。</div>');
+  addClue('mentor_wall');checkMentorDone();
+}
+function mentor_desk(){
+  if(getF('mentor_desk'))return;setF('mentor_desk',true);
+  sc('mentor','<div class="scene-card">你检查书桌。桌上散落着很多文件，大部分是实验数据。<br>在抽屉里，你找到了<strong>另一半照片</strong>——和你在第三关找到的半张照片正好能拼合。<br>这一半是一个女人的正脸，和你长得一模一样。照片背面写着：<span class="warn">"林曦，2020"</span>。<br><br>你还找到了一本<strong>硬皮笔记本</strong>，封面没有标题，但第一页写着："所有实验数据记录。"</div>');
+  addItem('otherHalfPhoto');addItem('notebook');addClue('mentor_otherhalf');addClue('mentor_notebook');
+  $('mentor-photo-btn').classList.remove('hidden');checkMentorDone();
+}
+function mentor_typewriter(){
+  if(getF('mentor_tw'))return;setF('mentor_tw',true);
+  sc('mentor','<div class="clue-card">你查看打字机。打字机上还卷着一张纸，上面打了一半的字：<br><br>"……第8号实验体已经进入游戏。根据预测，她会在第四关不按按钮，因为她和007号有相同的基因。<br>如果她通过了所有测试，我将亲自和她见面。<br>毕竟，她是我唯一的……"<br><br>文字到这里就断了。打字机的色带快用完了。<br><span class="thought">她想说什么？"她是我唯一的"……什么？</span></div>');
+  checkMentorDone();
+}
+function mentor_photo(){
+  if(getF('mentor_photo'))return;
+  if(!has('halfPhoto')||!has('otherHalfPhoto')){toast('你需要两半照片才能拼合。');return}
+  setF('mentor_photo',true);
+  G.inv=G.inv.filter(i=>i!=='halfPhoto'&&i!=='otherHalfPhoto');
+  addItem('fullPhoto');renderInv();
+  sc('mentor','<div class="clue-card">你把两半照片拼在一起——<br>完整的照片上，是两个长得一模一样的女孩，站在一家密室逃脱店门口。<br>左边的女孩笑得很开心，右边的女孩表情有些担忧。<br>照片背面写着：<span class="warn">"2020年夏天，和姐姐的最后一次密室逃脱。"</span><br><br>你的头开始剧烈地痛。一些碎片一样的记忆涌上来——医院的白光、医生的摇头、你跪在地上哭、林夏抱着你……<br><span class="purple">这个"姐姐"，不是林夏。</span></div>');
+  checkMentorDone();
+}
+function checkMentorDone(){
+  if(getF('mentor_wall')&&getF('mentor_desk')&&getF('mentor_photo')){
+    setF('mentor_done',true);
+    setTimeout(()=>{
+      ap('mentor','<div class="broadcast purple mt-20">你找到了所有的东西。现在，你想知道真相吗？走进那扇门——记忆回廊。在那里，你会想起一切。包括你为什么会忘记2020年发生的事。</div>');
+      $('mentor-next').classList.remove('hidden');
+    },1000);
+  }
+}
+
+// ==================== 记忆回廊（二周目） ====================
+function onEnterMemory(){
+  type('mem-scene','你推开门。门后不是一个房间，而是一条漫长的、发光的走廊。走廊两侧是一扇扇发光的门，每扇门上都标着一个年份。你知道，每一扇门后面，都是一段你失去的记忆。',16);
+  setTimeout(()=>{
+    $('mem-content').innerHTML='<div class="action-area"><button class="btn purple" onclick="mem_door1()">推开2019年的门</button></div>';
+  },2000);
+}
+// 覆盖onEnter来处理memory
+const origOnEnter=onEnter;
+onEnter=function(r){
+  origOnEnter(r);
+  if(r==='memory'&&!getF('mem_start')){setF('mem_start',true);onEnterMemory()}
+};
+
+function mem_door1(){
+  setF('mem_d1',true);
+  $('mem-content').innerHTML='<div class="flashback"><div class="fb-label">— 记忆碎片 · 2019年 —</div><p>游乐园。摩天轮。三个女孩在笑。<br>"林曦，你确定要玩那个密室逃脱吗？听说很吓人的。"<br>"怕什么，有我在呢。"<br>你是二姐。林曦是大姐——笑得最开心、胆子最大的那个。<br>林夏是三妹——表情最担忧、紧紧抓着你衣角的那个。<br>你举着相机给她们拍照。所以照片上只有林曦和林夏，背面写着"林曦&林夏，2019年夏天"。</p></div><div class="thought">我有两个姐妹……林曦是大姐，林夏是三妹。那我是谁？我叫什么？</div><div class="action-area mt-20"><button class="btn purple" onclick="mem_door2()">推开2020年的门</button></div>';
+}
+function mem_door2(){
+  setF('mem_d2',true);
+  $('mem-content').innerHTML='<div class="flashback"><div class="fb-label">— 记忆碎片 · 2020年7月 —</div><p>密室逃脱店。"深巷"。<br>你拉着大姐林曦去玩。她有先天性心脏病，但她坚持要去——她说下周就要做手术了，想在手术前最后体验一次。<br>三妹林夏也在，但她在另一个房间。<br>密室里，林曦突然捂住胸口倒了下去。你吓坏了，拼命拍门喊人，然后跑出去叫救护车。<br>等你带着工作人员回来的时候，她已经凉了。<br>医生说，如果早五分钟，也许还能救回来。<br>但密室里的其他玩家，没有一个人停下来帮她。他们都在自顾自地找线索、逃跑。<br>后来林夏告诉你，她当时听到了姐姐在拍门，但她害怕，没有去开门。<br>她一直为此自责。</p></div><div class="thought">所以林夏创建了深渊回廊……为了测试，人在极端环境下会不会帮助别人。<br>但我为什么会忘记这一切？我为什么会以为自己是"来找林夏的人"？</div><div class="action-area mt-20"><button class="btn purple" onclick="mem_door3()">推开最后一扇门</button></div>';
+}
+function mem_door3(){
+  setF('mem_d3',true);setF('mem_done',true);
+  addClue('memory_all');
+  $('mem-content').innerHTML='<div class="flashback"><div class="fb-label">— 记忆碎片 · 2025年 —</div><p>林夏花了五年时间，建了这座深渊回廊。<br>她设计了所有的房间，筛选了一批又一批的玩家。<br>然后，她把目光投向了你。<br>她给你注射了记忆抑制剂，让你忘记了林曦，忘记了2020年，忘记了你们是姐妹。<br>你以为你是"来找好友林夏的人"。其实，你是她的第008号实验体。<br>她想知道——如果是你，在第四关，会不会按那个按钮。<br>会不会，和当年那些见死不救的人一样。<br>她还在你手机里伪造了那条短信——"别进来。第三间房的画是假的。"——为了让你更确信自己是"来救人的人"。</p></div><div class="broadcast purple mt-20">现在你想起来了。你不是来救林夏的。你是林夏的二姐。<br>而林夏，就是那个设计者。她现在就在监控室外面等你。<br>做出最后的选择吧。</div><div class="center mt-20"><button class="btn purple" onclick="r5_finalD()">按下报警按钮，结束这一切 →</button></div>';
+}
+function r5_finalD(){
+  markCleared();goTo('ending-d');
+}
+</script>
+</body>
+</html>
