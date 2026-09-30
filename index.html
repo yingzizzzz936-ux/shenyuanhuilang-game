@@ -444,7 +444,7 @@ body.room-court::after{content:'';position:fixed;top:0;left:50%;width:60%;height
     <button class="btn hidden" id="surgery-chart-btn" onclick="surgery_chart()">查看墙上的病历</button>
   </div>
   <div id="surgery-content"></div>
-  <div class="pw-box hidden" id="surgery-pwbox"><label>药品柜密码锁（4位）—— 提示：规范人体实验的《纽伦堡法典》，是哪一年颁布的？</label><input type="text" class="pw-input" id="surgery-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="surgery_submit()">确认</button></div><p class="small mt-20">提示：去搜索"纽伦堡法典 颁布年份"</p></div>
+  <div class="pw-box hidden" id="surgery-pwbox"><label>药品柜密码锁（4位）—— 提示：《纽伦堡法典》是纽伦堡医生审判判决书的一部分，该判决是哪一年宣布的？</label><input type="text" class="pw-input" id="surgery-pw" maxlength="4"><div class="mt-20"><button class="btn primary" onclick="surgery_submit()">确认</button></div><p class="small mt-20">提示：去搜索"纽伦堡医生审判 判决年份"，注意不是审判开始的年份</p></div>
   <div class="center mt-20"><button class="btn primary hidden" id="surgery-next" onclick="goTo('darkroom')">返回黑暗房间 →</button></div>
 </div>
 
@@ -1775,7 +1775,7 @@ function surgery_tools(){
 }
 function surgery_chart(){
   if(getF('surgery_chart'))return;setF('surgery_chart',true);
-  sc('surgery','<div class="scene-card">你查看墙上的病历。病历旁边有一个药品柜，上了锁。<br>药品柜上有一个4位密码锁，提示写着：<br><span class="warn">"规范人体实验的《纽伦堡法典》，是哪一年颁布的？"</span><br><br>你需要去查一查：《纽伦堡法典》是在哪一年颁布的？</div>');
+  sc('surgery','<div class="scene-card">你查看墙上的病历。病历旁边有一个药品柜，上了锁。<br>药品柜上有一个4位密码锁，提示写着：<br><span class="warn">"《纽伦堡法典》是纽伦堡医生审判判决书的一部分，该判决是哪一年宣布的？"</span><br><br>你需要去查一查：纽伦堡医生审判的判决是在哪一年宣布的？注意不是审判开始的年份。</div>');
   $('surgery-pwbox').classList.remove('hidden');
   checkSurgeryDone();
 }
@@ -1789,7 +1789,7 @@ function surgery_submit(){
     $('surgery-pwbox').classList.add('hidden');
     $('surgery-next').classList.remove('hidden');
   }else{
-    toast('密码错误。去搜索"纽伦堡法典 颁布年份"，用4位年份数字。');
+    toast('密码错误。去搜索"纽伦堡医生审判 判决年份"，注意不是审判开始的年份，用4位年份数字。');
     $('surgery-pw').value='';
   }
 }
